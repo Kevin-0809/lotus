@@ -1,0 +1,35 @@
+source:
+  host: localhost
+  port: 15432
+  database: postgres
+  username: adp
+  password: OpenGauss@123
+  schema: adp
+  readOnly: true
+
+target:
+  host: localhost
+  port: 15432
+  database: postgres
+  username: tss
+  password: Tss@123456
+  schema: tss
+  readOnly: true
+
+options:
+  parallelism: 1
+  chunkSize: 5000
+  drillDown: true
+  checksumFunction: md5
+  tableFilter:
+    include: [".*"]
+    exclude: []
+  output:
+    dir: ./report
+    html: true
+    ddlScript: true
+    dmlScript: true
+  syncDirection: source-to-target
+  maxDisplayRows: 1000
+  tableTimeout: 0
+  dataCompareTables: ["orders", "users"]

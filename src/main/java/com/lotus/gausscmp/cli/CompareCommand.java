@@ -57,10 +57,14 @@ public final class CompareCommand implements Runnable {
             for (TableStructureDiff d : structResult.tableDiffs()) structMap.put(d.tableName(), d);
 
             List<String> dataTables = new ArrayList<>();
+            var dataCompareTables = opts.dataCompareTables();
+            boolean dataCompareEnabled = !dataCompareTables.isEmpty();
             for (TableStructureDiff d : structResult.tableDiffs()) {
                 if (d.status() == TableStructureStatus.CONSISTENT && d.existsInSource() && d.existsInTarget()) {
                     TableMeta tm = srcSnap.tables().stream().filter(t -> t.name().equals(d.tableName())).findFirst().orElse(null);
-                    if (tm != null && tm.hasPrimaryKeyOrUnique()) dataTables.add(d.tableName());
+                    if (tm != null && tm.hasPrimaryKeyOrUnique() && matchesDataCompareTable(d.tableName(), dataCompareTables)) {
+                        dataTables.add(d.tableName());
+                    }
                 }
             }
             List<TableDataDiff> dataDiffs = new ArrayList<>();
@@ -92,10 +96,17 @@ public final class CompareCommand implements Runnable {
                 if (dataDiffs.stream().noneMatch(d -> d.tableName().equals(t))) {
                     TableStructureDiff sd = structMap.get(t);
                     String reason = null;
-                    if (sd != null && sd.status() != TableStructureStatus.CONSISTENT) reason = "结构不一致";
-                    else if (sd != null && sd.existsInSource() && sd.existsInTarget()) {
+                    if (!dataCompareEnabled) {
+                        reason = "未配置数据比对表清单";
+                    } else if (sd != null && sd.status() != TableStructureStatus.CONSISTENT) {
+                        reason = "结构不一致";
+                    } else if (sd != null && sd.existsInSource() && sd.existsInTarget()) {
                         TableMeta tm = srcSnap.tables().stream().filter(x -> x.name().equals(t)).findFirst().orElse(null);
-                        if (tm != null && !tm.hasPrimaryKeyOrUnique()) reason = "无主键/唯一键";
+                        if (tm != null && !tm.hasPrimaryKeyOrUnique()) {
+                            reason = "无主键/唯一键";
+                        } else if (!matchesDataCompareTable(t, dataCompareTables)) {
+                            reason = "未在数据比对表清单中";
+                        }
                     }
                     dataDiffs.add(new TableDataDiff(t, List.of(), TableDataStatus.SKIPPED, 0, 0, new ChunkStats(0,0,0), List.of(), reason));
                 }
@@ -128,5 +139,10 @@ public final class CompareCommand implements Runnable {
             LOG.info(String.format("结构: 一致 %d, 差异 %d | 数据: 一致 %d, 差异 %d, 跳过 %d", sConsistent, sDifferent, dConsistent, dDifferent, dSkipped));
             return (sDifferent > 0 || dDifferent > 0) ? 1 : 0;
         }
+    }
+
+    private static boolean matchesDataCompareTable(String tableName, List<String> prefixes) {
+        if (prefixes.isEmpty()) return false;
+        return prefixes.stream().anyMatch(tableName::startsWith);
     }
 }
