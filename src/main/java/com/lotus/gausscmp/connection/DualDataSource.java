@@ -15,7 +15,7 @@ public final class DualDataSource implements AutoCloseable {
 
     private static HikariDataSource build(SourceConfig c, int poolSize) {
         HikariConfig hc = new HikariConfig();
-        hc.setJdbcUrl(String.format("jdbc:postgresql://%s:%d/%s", c.host(), c.port(), c.database()));
+        hc.setJdbcUrl(c.url());
         hc.setUsername(c.username());
         hc.setPassword(c.password());
         hc.setMaximumPoolSize(poolSize);
@@ -23,7 +23,7 @@ public final class DualDataSource implements AutoCloseable {
         hc.setConnectionTimeout(30000);
         hc.setIdleTimeout(600000);
         hc.setInitializationFailTimeout(0);
-        hc.setPoolName("gausscmp-" + c.host());
+        hc.setPoolName("gausscmp-" + c.username() + "-" + Integer.toHexString(c.url().hashCode()));
         return new HikariDataSource(hc);
     }
 

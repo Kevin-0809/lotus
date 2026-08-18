@@ -29,8 +29,8 @@ class DataComparatorIT {
             setup(tConn, "CREATE TABLE app.t (id int PRIMARY KEY, name text)");
             exec(sConn, "INSERT INTO app.t VALUES (1,'a'),(2,'b'),(3,'c')");
             exec(tConn, "INSERT INTO app.t VALUES (1,'a'),(2,'x'),(4,'d')");
-            SourceConfig srcCfg = new SourceConfig("h", 5432, "s", "s", "s", "app", true);
-            SourceConfig tgtCfg = new SourceConfig("h", 5432, "t", "t", "t", "app", true);
+            SourceConfig srcCfg = new SourceConfig("jdbc:postgresql://h:5432/s", "s", "s", "app", true);
+            SourceConfig tgtCfg = new SourceConfig("jdbc:postgresql://h:5432/t", "t", "t", "app", true);
             var dataCmp = new DataComparator(srcCfg, tgtCfg, 5000, "md5", true, 1000);
             TableDataDiff diff = dataCmp.compareTable(sConn, tConn, "t", List.of("id"), TableDataStatus.CONSISTENT);
             assertThat(diff.status()).isEqualTo(TableDataStatus.DIFFERENT);
@@ -51,8 +51,8 @@ class DataComparatorIT {
             setup(tConn, "CREATE TABLE app.t2 (id int PRIMARY KEY, name text)");
             exec(sConn, "INSERT INTO app.t2 VALUES (1,'a'),(2,'b')");
             exec(tConn, "INSERT INTO app.t2 VALUES (1,'a'),(2,'b')");
-            SourceConfig srcCfg = new SourceConfig("h", 5432, "s", "s", "s", "app", true);
-            SourceConfig tgtCfg = new SourceConfig("h", 5432, "t", "t", "t", "app", true);
+            SourceConfig srcCfg = new SourceConfig("jdbc:postgresql://h:5432/s", "s", "s", "app", true);
+            SourceConfig tgtCfg = new SourceConfig("jdbc:postgresql://h:5432/t", "t", "t", "app", true);
             var dataCmp = new DataComparator(srcCfg, tgtCfg, 5000, "md5", true, 1000);
             TableDataDiff diff = dataCmp.compareTable(sConn, tConn, "t2", List.of("id"), TableDataStatus.CONSISTENT);
             assertThat(diff.status()).isEqualTo(TableDataStatus.CONSISTENT);

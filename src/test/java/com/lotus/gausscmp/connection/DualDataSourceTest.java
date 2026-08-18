@@ -9,8 +9,8 @@ class DualDataSourceTest {
 
     @Test
     void buildsTwoPoolsWithCorrectParams() {
-        SourceConfig src = new SourceConfig("h1", 5432, "d1", "u1", "p1", "s1", true);
-        SourceConfig tgt = new SourceConfig("h2", 5432, "d2", "u2", "p2", "s2", true);
+        SourceConfig src = new SourceConfig("jdbc:postgresql://h1:5432/d1", "u1", "p1", "s1", true);
+        SourceConfig tgt = new SourceConfig("jdbc:postgresql://h2:5432/d2", "u2", "p2", "s2", true);
         try (var ds = new DualDataSource(src, tgt, 2)) {
             HikariDataSource s = ds.source();
             HikariDataSource t = ds.target();
@@ -24,8 +24,8 @@ class DualDataSourceTest {
 
     @Test
     void closesBothPools() {
-        SourceConfig src = new SourceConfig("h1", 5432, "d1", "u1", "p1", "s1", true);
-        SourceConfig tgt = new SourceConfig("h2", 5432, "d2", "u2", "p2", "s2", true);
+        SourceConfig src = new SourceConfig("jdbc:postgresql://h1:5432/d1", "u1", "p1", "s1", true);
+        SourceConfig tgt = new SourceConfig("jdbc:postgresql://h2:5432/d2", "u2", "p2", "s2", true);
         var ds = new DualDataSource(src, tgt, 1);
         ds.close();
         assertThat(ds.source().isClosed()).isTrue();

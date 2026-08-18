@@ -12,17 +12,13 @@ class ConfigLoaderTest {
         Path cfg = dir.resolve("compare.yaml");
         java.nio.file.Files.writeString(cfg, """
             source:
-              host: 10.0.0.1
-              port: 5432
-              database: prod
+              url: jdbc:postgresql://10.0.0.1:5432/prod
               username: ro
               password: ${GAUSSCMP_DEFINITELY_MISSING:-secret}
               schema: app
               readOnly: true
             target:
-              host: 10.0.0.2
-              port: 5432
-              database: prod
+              url: jdbc:postgresql://10.0.0.2:5432/prod
               username: ro
               password: ${GAUSSCMP_DEFINITELY_MISSING:-secret}
               schema: app
@@ -43,12 +39,14 @@ class ConfigLoaderTest {
               syncDirection: source-to-target
               maxDisplayRows: 1000
               tableTimeout: 0
+              dataCompareTables: ["t1", "t2"]
             """);
         CompareConfig config = ConfigLoader.load(cfg);
-        assertThat(config.source().host()).isEqualTo("10.0.0.1");
+        assertThat(config.source().url()).isEqualTo("jdbc:postgresql://10.0.0.1:5432/prod");
         assertThat(config.source().password()).isEqualTo("secret");
         assertThat(config.options().tableFilter().exclude()).containsExactly("^tmp_.*");
         assertThat(config.options().maxDisplayRows()).isEqualTo(1000);
+        assertThat(config.options().dataCompareTables()).containsExactly("t1", "t2");
     }
 
     @Test
@@ -56,17 +54,13 @@ class ConfigLoaderTest {
         Path cfg = dir.resolve("compare.yaml");
         java.nio.file.Files.writeString(cfg, """
             source:
-              host: h
-              port: 5432
-              database: d
+              url: jdbc:postgresql://h:5432/d
               username: u
               password: ${GAUSSCMP_REQUIRED_BUT_MISSING}
               schema: s
               readOnly: true
             target:
-              host: h
-              port: 5432
-              database: d
+              url: jdbc:postgresql://h:5432/d
               username: u
               password: p
               schema: s

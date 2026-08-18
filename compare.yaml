@@ -1,16 +1,12 @@
 source:
-  host: localhost
-  port: 15432
-  database: postgres
+  url: jdbc:postgresql://localhost:15432/postgres
   username: adp
   password: OpenGauss@123
   schema: adp
   readOnly: true
 
 target:
-  host: localhost
-  port: 15432
-  database: postgres
+  url: jdbc:postgresql://localhost:15432/postgres
   username: tss
   password: Tss@123456
   schema: tss
@@ -32,4 +28,4 @@ options:
   syncDirection: source-to-target
   maxDisplayRows: 1000
   tableTimeout: 0
-  dataCompareTables: ["orders", "users"]
+  dataCompareTables: ["orders", "users", "part_test"]
