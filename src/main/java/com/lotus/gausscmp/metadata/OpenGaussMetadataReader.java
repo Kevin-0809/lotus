@@ -30,7 +30,8 @@ public final class OpenGaussMetadataReader implements MetadataReader {
         String sql = """
             SELECT c.relname FROM pg_class c
             JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE n.nspname = ? AND c.relkind = 'r' AND c.relispartition = false
+            WHERE n.nspname = ? AND c.relkind = 'r'
+            AND (c.parttype IS NULL OR c.parttype != 'p')
             ORDER BY c.relname
             """;
         List<String> names = new ArrayList<>();
@@ -173,14 +174,14 @@ public final class OpenGaussMetadataReader implements MetadataReader {
 
     private boolean checkPartitioned(Connection conn, String schema, String table) throws Exception {
         String sql = """
-            SELECT c.relpartbound IS NOT NULL AS partbound
+            SELECT c.parttype = 'p' AS ispart
             FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
             WHERE n.nspname = ? AND c.relname = ? AND c.relkind = 'r'
             """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, schema); ps.setString(2, table);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getBoolean("partbound");
+                if (rs.next()) return rs.getBoolean("ispart");
             }
         }
         return false;
