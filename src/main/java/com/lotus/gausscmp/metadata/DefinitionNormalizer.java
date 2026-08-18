@@ -9,6 +9,27 @@ public final class DefinitionNormalizer {
         return def.trim().toLowerCase().replaceAll("\\s+", " ");
     }
 
+    public static String normalize(String def, String schema) {
+        if (def == null) return null;
+        String s = normalize(def);
+        if (schema != null && !schema.isBlank()) {
+            s = s.replaceAll("(?i)" + java.util.regex.Pattern.quote(schema.toLowerCase()) + "\\.", "");
+        }
+        return s;
+    }
+
+    public static String stripSchemaPrefix(String name, String schema) {
+        if (name == null) return null;
+        if (schema != null && !schema.isBlank()) {
+            String lower = name.toLowerCase();
+            String prefix = schema.toLowerCase() + ".";
+            if (lower.startsWith(prefix)) {
+                return name.substring(prefix.length());
+            }
+        }
+        return name;
+    }
+
     public static String normalizeDefaultValue(String val) {
         if (val == null) return null;
         String s = val.trim().toLowerCase().replaceAll("\\s+", " ");

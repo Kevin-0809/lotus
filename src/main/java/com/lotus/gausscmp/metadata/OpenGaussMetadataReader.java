@@ -117,8 +117,8 @@ public final class OpenGaussMetadataReader implements MetadataReader {
                         case 'c' -> ConstraintType.CHECK;
                         default -> throw new IllegalStateException("未知约束类型: " + ct);
                     };
-                    String def = DefinitionNormalizer.normalize(rs.getString("def"));
-                    String refTable = rs.getString("reftable");
+                    String def = DefinitionNormalizer.normalize(rs.getString("def"), schema);
+                    String refTable = DefinitionNormalizer.stripSchemaPrefix(rs.getString("reftable"), schema);
                     String colnames = rs.getString("colnames");
                     List<String> columns = parseColumnNames(colnames);
                     cons.add(new ConstraintMeta(rs.getString("conname"), type, def, columns, refTable));
@@ -156,8 +156,8 @@ public final class OpenGaussMetadataReader implements MetadataReader {
                         rs.getString("idxname"), table, columns,
                         rs.getBoolean("indisunique"),
                         pred != null,
-                        pred != null ? DefinitionNormalizer.normalize(pred) : null,
-                        DefinitionNormalizer.normalize(rs.getString("def"))));
+                        pred != null ? DefinitionNormalizer.normalize(pred, schema) : null,
+                        DefinitionNormalizer.normalize(rs.getString("def"), schema)));
                 }
             }
         }

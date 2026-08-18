@@ -28,4 +28,25 @@ class DefinitionNormalizerTest {
         assertThat(DefinitionNormalizer.normalizeDefaultValue("NULL")).isEqualTo("null");
         assertThat(DefinitionNormalizer.normalizeDefaultValue(null)).isNull();
     }
+
+    @Test
+    void stripsSchemaPrefixFromDefinition() {
+        assertThat(DefinitionNormalizer.normalize("create index idx on adp.t1 (id)", "adp"))
+            .isEqualTo("create index idx on t1 (id)");
+        assertThat(DefinitionNormalizer.normalize("foreign key (a) references adp.t2(id)", "adp"))
+            .isEqualTo("foreign key (a) references t2(id)");
+    }
+
+    @Test
+    void stripsSchemaPrefixCaseInsensitive() {
+        assertThat(DefinitionNormalizer.normalize("create index idx on ADP.t1 (id)", "adp"))
+            .isEqualTo("create index idx on t1 (id)");
+    }
+
+    @Test
+    void stripSchemaPrefixFromName() {
+        assertThat(DefinitionNormalizer.stripSchemaPrefix("adp.t1", "adp")).isEqualTo("t1");
+        assertThat(DefinitionNormalizer.stripSchemaPrefix("tss.t1", "adp")).isEqualTo("tss.t1");
+        assertThat(DefinitionNormalizer.stripSchemaPrefix(null, "adp")).isNull();
+    }
 }
