@@ -30,8 +30,8 @@ public final class OpenGaussMetadataReader implements MetadataReader {
         String sql = """
             SELECT c.relname FROM pg_class c
             JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE n.nspname = ? AND c.relkind = 'r'
-            AND (c.parttype IS NULL OR c.parttype != 'p')
+            WHERE n.nspname = ? AND c.relkind IN ('r', 'p')
+              AND NOT EXISTS (SELECT 1 FROM pg_inherits ih WHERE ih.inhrelid = c.oid)
             ORDER BY c.relname
             """;
         List<String> names = new ArrayList<>();
@@ -176,7 +176,7 @@ public final class OpenGaussMetadataReader implements MetadataReader {
         String sql = """
             SELECT c.parttype = 'p' AS ispart
             FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE n.nspname = ? AND c.relname = ? AND c.relkind = 'r'
+            WHERE n.nspname = ? AND c.relname = ? AND c.relkind IN ('r', 'p')
             """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, schema); ps.setString(2, table);
