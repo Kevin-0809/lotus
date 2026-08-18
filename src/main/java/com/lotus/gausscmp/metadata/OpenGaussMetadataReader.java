@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -92,7 +93,10 @@ public final class OpenGaussMetadataReader implements MetadataReader {
     private List<ConstraintMeta> readConstraints(Connection conn, String schema, String table) throws Exception {
         String sql = """
             SELECT con.conname, con.contype, pg_get_constraintdef(con.oid) AS def,
-                   NULLIF(con.confrelid, 0)::regclass AS reftable
+                   NULLIF(con.confrelid, 0)::regclass AS reftable,
+                   (SELECT string_agg(a.attname, ',' ORDER BY k.ord)
+                    FROM unnest(con.conkey) WITH ORDINALITY AS k(attnum, ord)
+                    JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = k.attnum) AS colnames
             FROM pg_constraint con
             JOIN pg_class c ON c.oid = con.conrelid
             JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -114,7 +118,9 @@ public final class OpenGaussMetadataReader implements MetadataReader {
                     };
                     String def = DefinitionNormalizer.normalize(rs.getString("def"));
                     String refTable = rs.getString("reftable");
-                    cons.add(new ConstraintMeta(rs.getString("conname"), type, def, List.of(), refTable));
+                    String colnames = rs.getString("colnames");
+                    List<String> columns = parseColumnNames(colnames);
+                    cons.add(new ConstraintMeta(rs.getString("conname"), type, def, columns, refTable));
                 }
             }
         }
@@ -124,7 +130,10 @@ public final class OpenGaussMetadataReader implements MetadataReader {
     private List<IndexMeta> readIndexes(Connection conn, String schema, String table) throws Exception {
         String sql = """
             SELECT i.relname AS idxname, pg_get_indexdef(ix.indexrelid) AS def,
-                   ix.indisunique, pg_get_expr(ix.indpred, ix.indrelid) AS pred
+                   ix.indisunique, pg_get_expr(ix.indpred, ix.indrelid) AS pred,
+                   (SELECT string_agg(a.attname, ',' ORDER BY k.ord)
+                    FROM unnest(ix.indkey::int2[]) WITH ORDINALITY AS k(attnum, ord)
+                    JOIN pg_attribute a ON a.attrelid = ix.indrelid AND a.attnum = k.attnum) AS colnames
             FROM pg_index ix
             JOIN pg_class c ON c.oid = ix.indrelid
             JOIN pg_class i ON i.oid = ix.indexrelid
@@ -140,8 +149,10 @@ public final class OpenGaussMetadataReader implements MetadataReader {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String pred = rs.getString("pred");
+                    String colnames = rs.getString("colnames");
+                    List<String> columns = parseColumnNames(colnames);
                     idxs.add(new IndexMeta(
-                        rs.getString("idxname"), table, List.of(),
+                        rs.getString("idxname"), table, columns,
                         rs.getBoolean("indisunique"),
                         pred != null,
                         pred != null ? DefinitionNormalizer.normalize(pred) : null,
@@ -150,6 +161,14 @@ public final class OpenGaussMetadataReader implements MetadataReader {
             }
         }
         return idxs;
+    }
+
+    private List<String> parseColumnNames(String colnames) {
+        if (colnames == null || colnames.isBlank()) return List.of();
+        return Arrays.stream(colnames.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toList();
     }
 
     private boolean checkPartitioned(Connection conn, String schema, String table) throws Exception {
