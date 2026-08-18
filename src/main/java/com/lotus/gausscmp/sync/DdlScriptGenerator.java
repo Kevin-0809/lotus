@@ -30,6 +30,7 @@ public final class DdlScriptGenerator {
             for (ColumnDiff cd : diff.columnDiffs()) generateColumnDdl(sb, diff.tableName(), cd, sourceTables.get(diff.tableName()));
             for (ConstraintDiff cd : diff.constraintDiffs()) generateConstraintDdl(sb, diff.tableName(), cd);
             for (IndexDiff id : diff.indexDiffs()) generateIndexDdl(sb, diff.tableName(), id);
+            generateCommentDdl(sb, diff);
         }
         return sb.toString();
     }
@@ -129,5 +130,25 @@ public final class DdlScriptGenerator {
         int parenIdx = afterOn.indexOf("(");
         if (parenIdx < 0) return afterOn.trim();
         return afterOn.substring(parenIdx).trim();
+    }
+
+    private void generateCommentDdl(StringBuilder sb, TableStructureDiff diff) {
+        if (diff.commentDiff().isPresent()) {
+            String comment = diff.commentDiff().get();
+            sb.append("-- TABLE_COMMENT_MISMATCH\n");
+            if (comment != null) {
+                sb.append("COMMENT ON TABLE \"").append(schema).append("\".\"").append(diff.tableName())
+                  .append("\" IS '").append(comment.replace("'", "''")).append("';\n");
+            }
+            sb.append("\n");
+        }
+        for (ColumnDiff cd : diff.columnDiffs()) {
+            if ("comment".equals(cd.field()) && cd.sourceValue() != null) {
+                sb.append("-- COLUMN_COMMENT_MISMATCH: ").append(cd.columnName()).append("\n");
+                sb.append("COMMENT ON COLUMN \"").append(schema).append("\".\"").append(diff.tableName())
+                  .append("\".\"").append(cd.columnName()).append("\" IS '")
+                  .append(cd.sourceValue().replace("'", "''")).append("';\n");
+            }
+        }
     }
 }
