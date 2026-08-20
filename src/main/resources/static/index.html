@@ -419,7 +419,7 @@ function structureEntries(){
     const add=(category,kind,name,source,target,type,field)=>entries.push({category,kind,table:t.tableName,name,source,target,type,field});
     (t.columnDiffs||[]).forEach(d=>add(d.field==='comment'?'comment':d.field==='defaultValue'?'default':(d.field==='dataType'||d.field==='nullable'||d.type.includes('COLUMN_')?'field':'other'),'字段',d.columnName,d.sourceValue,d.targetValue,d.type,d.field));
     (t.constraintDiffs||[]).forEach(d=>add('other','约束',d.constraintName,d.sourceDef,d.targetDef,d.type,''));
-    (t.indexDiffs||[]).forEach(d=>add('other','索引',d.indexName,d.sourceDef,d.targetDef,d.type,''));
+    (t.indexDiffs||[]).forEach(d=>add('index','索引',d.indexName,d.sourceDef,d.targetDef,d.type,''));
     (t.partitionDiffs||[]).forEach(d=>add('partition','分区',d.partitionName,d.sourceBoundary,d.targetBoundary,d.type,''));
     if(t.commentDiff) add('comment','表注释',t.tableName,t.commentDiff,null,'TABLE_COMMENT_MISMATCH','comment');
     if(!t.existsInSource||!t.existsInTarget) add('other','表',t.tableName,t.existsInSource?'存在':'缺失',t.existsInTarget?'存在':'缺失',t.existsInSource?'TABLE_EXTRA_IN_TARGET':'TABLE_MISSING_IN_TARGET','');
@@ -428,9 +428,9 @@ function structureEntries(){
   return entries;
 }
 function addSequenceEntry(entries,d){entries.push({category:'other',kind:'序列',table:'序列',name:d.sequenceName,source:d.sourceDef,target:d.targetDef,type:d.type,field:d.mismatchField});}
-function diffCategoryLabel(c){return {all:'全部',field:'字段差异',comment:'注释差异',default:'默认值差异',partition:'分区差异',other:'其他差异'}[c]||c;}
+function diffCategoryLabel(c){return {all:'全部',field:'字段差异',comment:'注释差异',default:'默认值差异',index:'索引差异',partition:'分区差异',other:'其他差异'}[c]||c;}
 function renderDiffCategories(entries){
-  const cats=['all','field','comment','default','partition','other'];
+  const cats=['all','field','comment','default','index','partition','other'];
   document.getElementById('diffCategories').innerHTML=cats.map(c=>{const n=c==='all'?entries.length:entries.filter(e=>e.category===c).length;return `<button class="diff-category ${structureCategory===c?'active':''}" onclick="selectStructureCategory('${c}')">${diffCategoryLabel(c)} <b>${n}</b></button>`;}).join('');
 }
 function selectStructureCategory(category){structureCategory=category;renderStructure();}
