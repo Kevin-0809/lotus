@@ -70,4 +70,37 @@ class StructureComparatorTest {
         assertThat(r.tableDiffs().get(0).commentDiff()).isPresent();
         assertThat(r.tableDiffs().get(0).status()).isEqualTo(TableStructureStatus.DIFFERENT);
     }
+
+    @Test
+    void indexStorageAttributesDoNotCauseMismatch() {
+        ColumnMeta c = new ColumnMeta("id", "integer", false, null, null, 1);
+        IndexMeta sourceIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
+            "create index idx on t using ubtree (id) with (storage_type=ustore) tablespace pg_default");
+        IndexMeta targetIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
+            "create index idx on t using ubtree (id) with (active_pages=12) tablespace other");
+        TableMeta sourceTable = new TableMeta("t", null, List.of(c), List.of(), List.of(sourceIndex), false);
+        TableMeta targetTable = new TableMeta("t", null, List.of(c), List.of(), List.of(targetIndex), false);
+
+        StructureDiffResult result = new StructureComparator().compare(
+            new SchemaSnapshot("app", List.of(sourceTable)), new SchemaSnapshot("app", List.of(targetTable)));
+
+        assertThat(result.tableDiffs().get(0).indexDiffs()).isEmpty();
+        assertThat(result.tableDiffs().get(0).status()).isEqualTo(TableStructureStatus.CONSISTENT);
+    }
+
+    @Test
+    void partitionedIndexScopeDifferenceIsDetected() {
+        ColumnMeta c = new ColumnMeta("id", "integer", false, null, null, 1);
+        IndexMeta sourceIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
+            "create index idx on t using ubtree (id) global");
+        IndexMeta targetIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
+            "create index idx on t using ubtree (id) local");
+        TableMeta sourceTable = new TableMeta("t", null, List.of(c), List.of(), List.of(sourceIndex), true);
+        TableMeta targetTable = new TableMeta("t", null, List.of(c), List.of(), List.of(targetIndex), true);
+
+        StructureDiffResult result = new StructureComparator().compare(
+            new SchemaSnapshot("app", List.of(sourceTable)), new SchemaSnapshot("app", List.of(targetTable)));
+
+        assertThat(result.tableDiffs().get(0).indexDiffs()).anyMatch(d -> d.type() == DiffType.INDEX_MISMATCH);
+    }
 }

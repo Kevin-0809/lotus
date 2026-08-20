@@ -49,4 +49,22 @@ class DefinitionNormalizerTest {
         assertThat(DefinitionNormalizer.stripSchemaPrefix("tss.t1", "adp")).isEqualTo("tss.t1");
         assertThat(DefinitionNormalizer.stripSchemaPrefix(null, "adp")).isNull();
     }
+
+    @Test
+    void ignoresIndexStorageAttributesForNonPartitionedTables() {
+        String source = "create index idx on t using ubtree (id) global with (storage_type=ustore) tablespace pg_default";
+        String target = "create index idx on t using ubtree (id) local with (active_pages=12) tablespace other";
+
+        assertThat(DefinitionNormalizer.normalizeIndexDefinition(source, "adp", false))
+            .isEqualTo(DefinitionNormalizer.normalizeIndexDefinition(target, "adp", false));
+    }
+
+    @Test
+    void preservesIndexScopeForPartitionedTables() {
+        String global = "create index idx on t using ubtree (id) global with (storage_type=ustore) tablespace pg_default";
+        String local = "create index idx on t using ubtree (id) local (partition p0_idx) with (active_pages=12) tablespace pg_default";
+
+        assertThat(DefinitionNormalizer.normalizeIndexDefinition(global, "adp", true))
+            .isNotEqualTo(DefinitionNormalizer.normalizeIndexDefinition(local, "adp", true));
+    }
 }
