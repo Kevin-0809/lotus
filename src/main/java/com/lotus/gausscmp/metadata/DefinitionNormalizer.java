@@ -1,21 +1,45 @@
 package com.lotus.gausscmp.metadata;
 
+import java.util.regex.Pattern;
+
 public final class DefinitionNormalizer {
 
     private DefinitionNormalizer() {}
 
+    private static final Pattern LOCAL_PARTITION_LIST = Pattern.compile(
+        "local\\s*\\(.*?\\)", Pattern.CASE_INSENSITIVE);
+
     public static String normalize(String def) {
         if (def == null) return null;
-        return def.trim().toLowerCase().replaceAll("\\s+", " ");
+        String s = def.trim().toLowerCase().replaceAll("\\s+", " ");
+        s = stripLocalPartitionList(s);
+        return s;
     }
 
     public static String normalize(String def, String schema) {
         if (def == null) return null;
         String s = normalize(def);
         if (schema != null && !schema.isBlank()) {
-            s = s.replaceAll("(?i)" + java.util.regex.Pattern.quote(schema.toLowerCase()) + "\\.", "");
+            s = s.replaceAll("(?i)" + Pattern.quote(schema.toLowerCase()) + "\\.", "");
         }
         return s;
+    }
+
+    public static String normalizeForDdl(String def) {
+        if (def == null) return null;
+        String s = def.trim().replaceAll("\\s+", " ");
+        return stripLocalPartitionList(s);
+    }
+
+    public static String normalizeForDdl(String def, String schema) {
+        if (def == null) return null;
+        String s = normalizeForDdl(def);
+        return s;
+    }
+
+    public static String stripLocalPartitionList(String def) {
+        if (def == null) return null;
+        return LOCAL_PARTITION_LIST.matcher(def).replaceAll("local").trim();
     }
 
     public static String stripSchemaPrefix(String name, String schema) {
@@ -37,7 +61,7 @@ public final class DefinitionNormalizer {
         if (s.startsWith("'") && s.endsWith("'") && s.length() >= 2) {
             s = s.substring(1, s.length() - 1);
         }
-        if (s.startsWith("now") || s.startsWith("current_timestamp")) return "current_timestamp";
+        if (s.startsWith("now") || s.startsWith("current_timestamp") || s.startsWith("pg_systimestamp")) return "current_timestamp";
         return s;
     }
 }

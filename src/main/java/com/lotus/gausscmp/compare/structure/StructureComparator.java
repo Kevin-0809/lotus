@@ -21,28 +21,33 @@ public final class StructureComparator {
             TableMeta t = tgtMap.get(name);
             diffs.add(compareTable(name, s, t));
         }
-        return new StructureDiffResult(diffs);
+        List<SequenceDiff> seqDiffs = compareSequences(
+            source.sequences() != null ? source.sequences() : List.of(),
+            target.sequences() != null ? target.sequences() : List.of());
+        return new StructureDiffResult(diffs, seqDiffs);
     }
 
     private TableStructureDiff compareTable(String name, TableMeta s, TableMeta t) {
         if (s == null) {
             return new TableStructureDiff(name, false, true, TableStructureStatus.DIFFERENT,
                 List.of(new ColumnDiff(DiffType.TABLE_EXTRA_IN_TARGET, name, null, null, null)),
-                List.of(), List.of(), Optional.empty());
+                List.of(), List.of(), List.of(), Optional.empty());
         }
         if (t == null) {
             return new TableStructureDiff(name, true, false, TableStructureStatus.DIFFERENT,
                 List.of(new ColumnDiff(DiffType.TABLE_MISSING_IN_TARGET, name, null, null, null)),
-                List.of(), List.of(), Optional.empty());
+                List.of(), List.of(), List.of(), Optional.empty());
         }
         List<ColumnDiff> colDiffs = compareColumns(s, t);
         List<ConstraintDiff> conDiffs = compareConstraints(s, t);
         List<IndexDiff> idxDiffs = compareIndexes(s, t);
+        List<PartitionDiff> partDiffs = comparePartitions(s, t);
         Optional<String> commentDiff = compareComment(s.comment(), t.comment());
-        boolean consistent = colDiffs.isEmpty() && conDiffs.isEmpty() && idxDiffs.isEmpty() && commentDiff.isEmpty();
+        boolean consistent = colDiffs.isEmpty() && conDiffs.isEmpty() && idxDiffs.isEmpty()
+            && partDiffs.isEmpty() && commentDiff.isEmpty();
         return new TableStructureDiff(name, true, true,
             consistent ? TableStructureStatus.CONSISTENT : TableStructureStatus.DIFFERENT,
-            colDiffs, conDiffs, idxDiffs, commentDiff);
+            colDiffs, conDiffs, idxDiffs, partDiffs, commentDiff);
     }
 
     private List<ColumnDiff> compareColumns(TableMeta s, TableMeta t) {
@@ -53,9 +58,9 @@ public final class StructureComparator {
             ColumnMeta sc = sm.get(n), tc = tm.get(n);
             if (sc == null) { diffs.add(new ColumnDiff(DiffType.COLUMN_EXTRA_IN_TARGET, n, null, null, null)); continue; }
             if (tc == null) { diffs.add(new ColumnDiff(DiffType.COLUMN_MISSING_IN_TARGET, n, null, null, null)); continue; }
-            if (!eq(sc.dataType(), tc.dataType())) diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, sc.dataType(), tc.dataType(), "dataType"));
+            if (!eq(DefinitionNormalizer.normalize(sc.dataType()), DefinitionNormalizer.normalize(tc.dataType()))) diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, sc.dataType(), tc.dataType(), "dataType"));
             if (sc.nullable() != tc.nullable()) diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, String.valueOf(sc.nullable()), String.valueOf(tc.nullable()), "nullable"));
-            if (!eq(sc.defaultValue(), tc.defaultValue())) diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, sc.defaultValue(), tc.defaultValue(), "defaultValue"));
+            if (!eq(DefinitionNormalizer.normalizeDefaultValue(sc.defaultValue()), DefinitionNormalizer.normalizeDefaultValue(tc.defaultValue()))) diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, sc.defaultValue(), tc.defaultValue(), "defaultValue"));
             if (!eq(sc.comment(), tc.comment())) diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, sc.comment(), tc.comment(), "comment"));
         }
         return diffs;
@@ -69,7 +74,8 @@ public final class StructureComparator {
             ConstraintMeta sc = sm.get(n), tc = tm.get(n);
             if (sc == null) { diffs.add(new ConstraintDiff(DiffType.CONSTRAINT_EXTRA_IN_TARGET, n, null, null)); continue; }
             if (tc == null) { diffs.add(new ConstraintDiff(DiffType.CONSTRAINT_MISSING_IN_TARGET, n, sc.definition(), null)); continue; }
-            if (!eq(sc.definition(), tc.definition())) diffs.add(new ConstraintDiff(DiffType.CONSTRAINT_MISMATCH, n, sc.definition(), tc.definition()));
+            if (sc.type() == ConstraintType.CHECK) continue;
+            if (!eq(DefinitionNormalizer.normalize(sc.definition(), s.name()), DefinitionNormalizer.normalize(tc.definition(), t.name()))) diffs.add(new ConstraintDiff(DiffType.CONSTRAINT_MISMATCH, n, sc.definition(), tc.definition()));
         }
         return diffs;
     }
@@ -82,9 +88,62 @@ public final class StructureComparator {
             IndexMeta si = sm.get(n), ti = tm.get(n);
             if (si == null) { diffs.add(new IndexDiff(DiffType.INDEX_EXTRA_IN_TARGET, n, null, null)); continue; }
             if (ti == null) { diffs.add(new IndexDiff(DiffType.INDEX_MISSING_IN_TARGET, n, si.definition(), null)); continue; }
-            if (!eq(si.definition(), ti.definition())) diffs.add(new IndexDiff(DiffType.INDEX_MISMATCH, n, si.definition(), ti.definition()));
+            if (!eq(DefinitionNormalizer.normalize(si.definition(), s.name()), DefinitionNormalizer.normalize(ti.definition(), t.name()))) diffs.add(new IndexDiff(DiffType.INDEX_MISMATCH, n, si.definition(), ti.definition()));
         }
         return diffs;
+    }
+
+    private List<PartitionDiff> comparePartitions(TableMeta s, TableMeta t) {
+        List<PartitionDiff> diffs = new ArrayList<>();
+        if (!eq(s.partitionStrategy(), t.partitionStrategy())) {
+            diffs.add(new PartitionDiff(DiffType.PARTITION_STRATEGY_MISMATCH, "(strategy)",
+                s.partitionStrategy(), t.partitionStrategy()));
+        }
+        Map<String, PartitionMeta> sm = toMap(s.partitions() != null ? s.partitions() : List.of(), PartitionMeta::name);
+        Map<String, PartitionMeta> tm = toMap(t.partitions() != null ? t.partitions() : List.of(), PartitionMeta::name);
+        for (String n : unionKeys(sm, tm)) {
+            PartitionMeta sp = sm.get(n), tp = tm.get(n);
+            if (sp == null) { diffs.add(new PartitionDiff(DiffType.PARTITION_EXTRA_IN_TARGET, n, null, tp.boundaryExpr())); continue; }
+            if (tp == null) { diffs.add(new PartitionDiff(DiffType.PARTITION_MISSING_IN_TARGET, n, sp.boundaryExpr(), null)); continue; }
+            if (!eq(sp.boundaryExpr(), tp.boundaryExpr())) diffs.add(new PartitionDiff(DiffType.PARTITION_MISMATCH, n, sp.boundaryExpr(), tp.boundaryExpr()));
+        }
+        return diffs;
+    }
+
+    private List<SequenceDiff> compareSequences(List<SequenceMeta> source, List<SequenceMeta> target) {
+        List<SequenceDiff> diffs = new ArrayList<>();
+        Map<String, SequenceMeta> sm = toMap(source, SequenceMeta::name);
+        Map<String, SequenceMeta> tm = toMap(target, SequenceMeta::name);
+        Set<String> all = new TreeSet<>();
+        all.addAll(sm.keySet());
+        all.addAll(tm.keySet());
+        for (String n : all) {
+            SequenceMeta s = sm.get(n), t = tm.get(n);
+            if (s == null) { diffs.add(new SequenceDiff(DiffType.SEQUENCE_EXTRA_IN_TARGET, n, null, formatSeq(t), null)); continue; }
+            if (t == null) { diffs.add(new SequenceDiff(DiffType.SEQUENCE_MISSING_IN_TARGET, n, formatSeq(s), null, null)); continue; }
+            String srcDef = formatSeq(s), tgtDef = formatSeq(t);
+            if (!srcDef.equals(tgtDef)) {
+                String field = findMismatchField(s, t);
+                diffs.add(new SequenceDiff(DiffType.SEQUENCE_MISMATCH, n, srcDef, tgtDef, field));
+            }
+        }
+        return diffs;
+    }
+
+    private static String formatSeq(SequenceMeta s) {
+        return String.format("start=%d,increment=%d,min=%d,max=%d,cache=%d,cycle=%s,type=%s",
+            s.startValue(), s.incrementBy(), s.minValue(), s.maxValue(), s.cacheSize(), s.cycle(), s.dataType());
+    }
+
+    private static String findMismatchField(SequenceMeta s, SequenceMeta t) {
+        if (s.incrementBy() != t.incrementBy()) return "incrementBy";
+        if (s.cycle() != t.cycle()) return "cycle";
+        if (s.minValue() != t.minValue()) return "minValue";
+        if (s.maxValue() != t.maxValue()) return "maxValue";
+        if (s.cacheSize() != t.cacheSize()) return "cacheSize";
+        if (!eq(s.dataType(), t.dataType())) return "dataType";
+        if (s.startValue() != t.startValue()) return "startValue";
+        return "unknown";
     }
 
     private Optional<String> compareComment(String s, String t) {

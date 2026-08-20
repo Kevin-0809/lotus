@@ -1,4 +1,7 @@
 target/
+data/
+report/
+src.7z
 dependency-reduced-pom.xml
 *.iml
 .idea/

@@ -18,7 +18,7 @@ options:
   drillDown: true
   checksumFunction: md5
   tableFilter:
-    include: [".*"]
+    include: ["^verify_.*"]
     exclude: []
   output:
     dir: ./report
@@ -28,4 +28,4 @@ options:
   syncDirection: source-to-target
   maxDisplayRows: 1000
   tableTimeout: 0
-  dataCompareTables: ["orders", "users", "part_test"]
+  dataCompareTables: ["^verify_"]

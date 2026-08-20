@@ -1,8 +1,6 @@
 package com.lotus.gausscmp.cli;
 
-import com.lotus.gausscmp.compare.data.DataComparator;
 import com.lotus.gausscmp.compare.diff.*;
-import com.lotus.gausscmp.compare.structure.StructureComparator;
 import com.lotus.gausscmp.config.*;
 import com.lotus.gausscmp.connection.DualDataSource;
 import com.lotus.gausscmp.metadata.*;
@@ -52,7 +50,7 @@ public final class CompareCommand implements Runnable {
                 srcSnap = reader.read(sc, config.source().schema(), opts.tableFilter().include(), opts.tableFilter().exclude());
                 tgtSnap = reader.read(tc, config.target().schema(), opts.tableFilter().include(), opts.tableFilter().exclude());
             }
-            StructureDiffResult structResult = new StructureComparator().compare(srcSnap, tgtSnap);
+            StructureDiffResult structResult = new com.lotus.gausscmp.compare.structure.StructureComparator().compare(srcSnap, tgtSnap);
             Map<String, TableStructureDiff> structMap = new LinkedHashMap<>();
             for (TableStructureDiff d : structResult.tableDiffs()) structMap.put(d.tableName(), d);
 
@@ -69,7 +67,7 @@ public final class CompareCommand implements Runnable {
             }
             List<TableDataDiff> dataDiffs = new ArrayList<>();
             if (!dataTables.isEmpty()) {
-                DataComparator dataCmp = new DataComparator(config.source(), config.target(),
+                var dataCmp = new com.lotus.gausscmp.compare.data.DataComparator(config.source(), config.target(),
                     opts.chunkSize(), opts.checksumFunction(), opts.drillDown(), opts.maxDisplayRows());
                 try (var exec = new TableTaskExecutor<TableDataDiff>(opts.parallelism())) {
                     Map<String, TableDataDiff> results = exec.execute(dataTables, table -> {
@@ -93,23 +91,22 @@ public final class CompareCommand implements Runnable {
             srcSnap.tables().forEach(t -> allTables.add(t.name()));
             tgtSnap.tables().forEach(t -> { if (!allTables.contains(t.name())) allTables.add(t.name()); });
             for (String t : allTables) {
-                if (dataDiffs.stream().noneMatch(d -> d.tableName().equals(t))) {
-                    TableStructureDiff sd = structMap.get(t);
-                    String reason = null;
-                    if (!dataCompareEnabled) {
-                        reason = "未配置数据比对表清单";
-                    } else if (sd != null && sd.status() != TableStructureStatus.CONSISTENT) {
-                        reason = "结构不一致";
-                    } else if (sd != null && sd.existsInSource() && sd.existsInTarget()) {
-                        TableMeta tm = srcSnap.tables().stream().filter(x -> x.name().equals(t)).findFirst().orElse(null);
-                        if (tm != null && !tm.hasPrimaryKeyOrUnique()) {
-                            reason = "无主键/唯一键";
-                        } else if (!matchesDataCompareTable(t, dataCompareTables)) {
-                            reason = "未在数据比对表清单中";
-                        }
+                if (dataDiffs.stream().anyMatch(d -> d.tableName().equals(t))) continue;
+                TableStructureDiff sd = structMap.get(t);
+                String reason = null;
+                if (!dataCompareEnabled) {
+                    reason = "未配置数据比对表清单";
+                } else if (sd != null && sd.status() != TableStructureStatus.CONSISTENT) {
+                    reason = "结构不一致";
+                } else if (sd != null && sd.existsInSource() && sd.existsInTarget()) {
+                    TableMeta tm = srcSnap.tables().stream().filter(x -> x.name().equals(t)).findFirst().orElse(null);
+                    if (tm != null && !tm.hasPrimaryKeyOrUnique()) {
+                        reason = "无主键/唯一键";
+                    } else if (!matchesDataCompareTable(t, dataCompareTables)) {
+                        reason = "未在数据比对表清单中";
                     }
-                    dataDiffs.add(new TableDataDiff(t, List.of(), TableDataStatus.SKIPPED, 0, 0, new ChunkStats(0,0,0), List.of(), reason));
                 }
+                dataDiffs.add(new TableDataDiff(t, List.of(), TableDataStatus.SKIPPED, 0, 0, new ChunkStats(0,0,0), List.of(), reason));
             }
             dataDiffs.sort(Comparator.comparing(TableDataDiff::tableName));
 
@@ -129,7 +126,8 @@ public final class CompareCommand implements Runnable {
                 Map<String, TableMeta> srcMap = new HashMap<>();
                 srcSnap.tables().forEach(t -> srcMap.put(t.name(), t));
                 String ddl = new DdlScriptGenerator(config.target().schema()).generate(structResult.tableDiffs(), srcMap);
-                ScriptWriter.write(outputDir, ddl, "", true, false);
+                String seqDdl = new DdlScriptGenerator(config.target().schema()).generateSequenceDdl(structResult.sequenceDiffs());
+                ScriptWriter.write(outputDir, ddl + (seqDdl != null && !seqDdl.isEmpty() ? "\n" + seqDdl : ""), "", true, false);
             }
             if (opts.output().dmlScript()) {
                 String dml = new DmlScriptGenerator(config.target().schema(), opts.syncDirection()).generate(dataDiffs);

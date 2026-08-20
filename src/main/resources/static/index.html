@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GaussDB Schema 比对平台</title>
+<style>
+:root {
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --border: #e8eaed;
+  --border-light: #f0f1f3;
+  --primary: #2563eb;
+  --primary-bg: #eff6ff;
+  --text: #1f2937;
+  --text-2: #6b7280;
+  --text-3: #9ca3af;
+  --green: #059669;
+  --green-bg: #ecfdf5;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --gray-bg: #f3f4f6;
+  --radius: 8px;
+  --radius-sm: 6px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+.container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+/* Header */
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.header h1 { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.header .logo { display: flex; align-items: center; gap: 10px; }
+.header .logo-icon { width: 32px; height: 32px; background: var(--primary); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 16px; }
+
+/* Nav */
+.navbar { display: flex; gap: 2px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; margin-bottom: 24px; }
+.nav-item { padding: 8px 20px; cursor: pointer; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; color: var(--text-2); transition: all .15s; border: none; background: none; }
+.nav-item.active { background: var(--primary); color: #fff; }
+.nav-item:hover:not(.active) { background: var(--primary-bg); color: var(--primary); }
+
+/* Card */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px; }
+.card-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.card-title::before { content: ''; width: 3px; height: 14px; background: var(--primary); border-radius: 2px; }
+
+/* Form */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { margin-bottom: 10px; }
+.form-group label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 4px; font-weight: 500; }
+.form-group input, .form-group select { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; color: var(--text); background: var(--card); transition: border-color .15s, box-shadow .15s; }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
+.form-group input[readonly] { background: var(--gray-bg); color: var(--text-2); }
+.form-row { display: flex; gap: 12px; }
+.form-row .form-group { flex: 1; }
+.section-label { font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border-light); }
+
+/* Button */
+.btn { padding: 7px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; background: var(--card); color: var(--text); line-height: 1.4; }
+.btn:hover { border-color: var(--text-3); }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+.btn-primary:disabled { background: var(--text-3); border-color: var(--text-3); cursor: not-allowed; }
+.btn-danger { background: var(--card); border-color: var(--border); color: var(--red); }
+.btn-danger:hover { background: var(--red-bg); border-color: var(--red); }
+.btn-success { background: var(--green); border-color: var(--green); color: #fff; }
+.btn-success:hover { background: #047857; border-color: #047857; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-block { display: block; width: 100%; padding: 10px; font-size: 14px; }
+
+/* Messages */
+.msg { display: none; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 12px; font-size: 13px; }
+.msg.show { display: block; }
+.msg.ok { background: var(--green-bg); border: 1px solid #a7f3d0; color: var(--green); }
+.msg.err { background: var(--red-bg); border: 1px solid #fecaca; color: var(--red); }
+
+/* Views */
+.view { display: none; }
+.view.show { display: block; }
+
+/* Summary */
+.summary-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 14px; }
+.summary-box { background: var(--bg); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 14px; text-align: center; }
+.summary-box .label { font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
+.summary-box .value { font-size: 24px; font-weight: 700; }
+.summary-box.green .value { color: var(--green); }
+.summary-box.red .value { color: var(--red); }
+.summary-box.gray .value { color: var(--text-2); }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 16px; }
+.tab { padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-2); border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Sub tabs */
+.sub-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+.sub-tab { padding: 5px 12px; cursor: pointer; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--card); font-size: 12px; color: var(--text-2); transition: all .15s; }
+.sub-tab:hover { border-color: var(--text-3); }
+.sub-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* Table */
+table { border-collapse: collapse; width: 100%; margin-bottom: 12px; font-size: 13px; }
+th { text-align: left; padding: 8px 12px; font-weight: 600; color: var(--text-2); font-size: 12px; border-bottom: 2px solid var(--border); white-space: nowrap; background: transparent; }
+td { padding: 8px 12px; border-bottom: 1px solid var(--border-light); color: var(--text); }
+tr:hover td { background: var(--bg); }
+
+/* Badge */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; line-height: 1.4; }
+.badge.consistent { background: var(--green-bg); color: var(--green); }
+.badge.different { background: var(--red-bg); color: var(--red); }
+.badge.skipped { background: var(--gray-bg); color: var(--text-2); }
+.badge.success { background: var(--green-bg); color: var(--green); }
+.badge.failed { background: var(--red-bg); color: var(--red); }
+.badge.info { background: var(--primary-bg); color: var(--primary); }
+
+/* Diff */
+.diff-value { color: var(--red); font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+/* Code blocks */
+.script-wrap { position: relative; }
+.script-wrap .copy-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); color: #cbd5e1; border-radius: 4px; padding: 3px 10px; font-size: 12px; cursor: pointer; transition: all .15s; z-index: 2; }
+.script-wrap .copy-btn:hover { background: rgba(255,255,255,.18); color: #fff; }
+.script-wrap .copy-btn.copied { background: var(--green); border-color: var(--green); color: #fff; }
+pre.sql-script { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: var(--radius-sm); overflow-x: auto; font-size: 12px; line-height: 1.7; max-height: 500px; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; }
+.json-view { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: var(--radius-sm); overflow: auto; font-size: 12px; max-height: 600px; white-space: pre-wrap; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; }
+
+/* Expand button */
+.expand-btn { background: none; border: 1px solid var(--border); border-radius: 4px; padding: 2px 10px; cursor: pointer; font-size: 12px; color: var(--primary); transition: all .15s; }
+.expand-btn:hover { background: var(--primary-bg); border-color: var(--primary); }
+.detail-row { display: none; }
+.detail-row.show { display: table-row; }
+.detail-row td { background: var(--bg); padding: 12px; }
+.detail-row .table-search input { background: var(--card); }
+
+/* Search & Filter */
+.table-search { margin-bottom: 10px; }
+.table-search input { padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); width: 280px; font-size: 13px; background: var(--card); }
+.table-search input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
+.status-filter { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; font-size: 12px; color: var(--text-2); }
+.status-filter label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.status-filter input[type=checkbox] { accent-color: var(--primary); }
+
+/* Loading */
+.loading { display: none; text-align: center; padding: 48px; }
+.loading.show { display: block; }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--border-light); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading p { color: var(--text-2); font-size: 13px; }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.15); backdrop-filter: blur(2px); z-index: 1000; justify-content: center; align-items: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: 480px; max-width: 90vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+.modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+/* Connection pair */
+.connection-pair { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; }
+.arrow { font-size: 20px; color: var(--text-3); padding-top: 32px; text-align: center; }
+
+/* Meta badge */
+.meta-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 11px; margin-left: 4px; }
+.meta-badge.warn { background: #fef3c7; color: #92400e; }
+.meta-badge.ok { background: var(--green-bg); color: var(--green); }
+
+/* Compare buttons */
+.compare-type-btns { display: flex; gap: 10px; margin-top: 16px; }
+.compare-type-btns .btn { flex: 1; }
+
+/* Empty hint */
+.empty-hint { text-align: center; padding: 32px; color: var(--text-3); font-size: 13px; }
+
+/* Pager */
+.pager { margin-top: 12px; text-align: center; display: flex; gap: 4px; justify-content: center; }
+
+/* Section header inline */
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.section-header h2 { font-size: 15px; font-weight: 600; color: var(--text); }
+
+/* Table detail inner */
+.detail-row table { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; }
+.detail-row table th { border-bottom: 1px solid var(--border); }
+.detail-row h3 { font-size: 13px; font-weight: 600; margin: 10px 0 6px; color: var(--text-2); }
+
+/* Checkbox label */
+.checkbox-group { display: flex; gap: 16px; }
+.checkbox-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--text); font-weight: 400; }
+.checkbox-group input[type=checkbox] { accent-color: var(--primary); }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">G</div>
+    <h1>GaussDB Schema 比对平台</h1>
+  </div>
+</div>
+
+<div class="navbar">
+  <div class="nav-item active" onclick="switchView('compare',this)">比对</div>
+  <div class="nav-item" onclick="switchView('connections',this)">数据源管理</div>
+  <div class="nav-item" onclick="switchView('history',this)">比对历史</div>
+</div>
+
+<!-- ===== 比对视图 ===== -->
+<div class="view show" id="view-compare">
+  <div class="card">
+    <div class="card-title">选择数据源</div>
+    <div class="connection-pair">
+      <div>
+        <div class="section-label">源数据源</div>
+        <div class="form-group"><label>选择数据源</label><select id="sourceConnId" onchange="onConnSelect('source')"><option value="">-- 请选择 --</option></select></div>
+        <div class="form-group"><label>JDBC URL</label><input id="sourceUrl" readonly placeholder="选择数据源后自动填充"></div>
+        <div class="form-row"><div class="form-group"><label>用户名</label><input id="sourceUsername" readonly></div><div class="form-group"><label>Schema</label><input id="sourceSchema" readonly></div></div>
+        <div id="sourceMetaStatus"></div>
+      </div>
+      <div class="arrow">→</div>
+      <div>
+        <div class="section-label">目标数据源</div>
+        <div class="form-group"><label>选择数据源</label><select id="targetConnId" onchange="onConnSelect('target')"><option value="">-- 请选择 --</option></select></div>
+        <div class="form-group"><label>JDBC URL</label><input id="targetUrl" readonly placeholder="选择数据源后自动填充"></div>
+        <div class="form-row"><div class="form-group"><label>用户名</label><input id="targetUsername" readonly></div><div class="form-group"><label>Schema</label><input id="targetSchema" readonly></div></div>
+        <div id="targetMetaStatus"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">比对选项</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <div class="form-group"><label>并发数</label><input id="parallelism" type="number" value="1" min="1" style="width:80px"></div>
+        <div class="form-group"><label>块大小</label><input id="chunkSize" type="number" value="5000" min="1" style="width:100px"></div>
+        <div class="form-group"><label>最大显示行数</label><input id="maxDisplayRows" type="number" value="1000" min="1" style="width:100px"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>校验函数</label><select id="checksumFunction"><option value="md5">MD5</option><option value="sha256">SHA256</option></select></div>
+        <div class="form-group"><label>同步方向</label><select id="syncDirection"><option value="source-to-target">源→目标</option><option value="target-to-source">目标→源</option></select></div>
+        <div class="form-group"><label>下钻比对</label><select id="drillDown"><option value="true">是</option><option value="false">否</option></select></div>
+      </div>
+      <div class="form-group"><label>包含表 (正则,逗号分隔)</label><input id="includeTables" placeholder="留空=全部"></div>
+      <div class="form-group"><label>排除表 (正则,逗号分隔)</label><input id="excludeTables" placeholder="留空=不排除"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>数据比对表 (正则前缀,逗号分隔)</label><input id="dataCompareTables" placeholder="留空=不比对数据"></div>
+      <div class="checkbox-group" style="grid-column:1/-1;margin-bottom:10px">
+        <label><input type="checkbox" id="generateDdl" checked> 生成 DDL 同步脚本</label>
+        <label><input type="checkbox" id="generateDml" checked> 生成 DML 同步脚本</label>
+      </div>
+    </div>
+    <div class="compare-type-btns">
+      <button class="btn btn-primary" id="btnStructure" onclick="runCompare('structure')">结构比对</button>
+      <button class="btn btn-success" id="btnData" onclick="runCompare('data')">数据比对</button>
+      <button class="btn btn-primary" id="btnBoth" onclick="runCompare('both')">结构+数据联合比对</button>
+    </div>
+  </div>
+  <div class="msg err" id="errorMsg"></div>
+  <div class="loading" id="loading"><div class="spinner"></div><p id="loadingText">正在比对中...</p></div>
+  <div class="view" id="compareResult">
+    <div class="card"><div class="card-title">比对结果概览</div><div class="summary-grid" id="summaryGrid"></div><p style="color:var(--text-2);font-size:12px" id="schemaInfo"></p></div>
+    <div class="card">
+      <div class="tabs">
+        <div class="tab active" data-target="tabStructure" onclick="switchTab(this)">结构差异</div>
+        <div class="tab" data-target="tabData" onclick="switchTab(this)">数据差异</div>
+        <div class="tab" data-target="tabSeq" onclick="switchTab(this)">序列差异</div>
+        <div class="tab" data-target="tabScript" onclick="switchTab(this)">同步脚本</div>
+        <div class="tab" data-target="tabJson" onclick="switchTab(this)">原始JSON</div>
+      </div>
+      <div class="tab-panel active" id="tabStructure">
+        <div class="status-filter"><label><input type="checkbox" id="fDiff" checked> 差异</label><label><input type="checkbox" id="fConsistent"> 一致</label><label><input type="checkbox" id="fMissing"> 源缺失</label><label><input type="checkbox" id="fExtra"> 目标多余</label></div>
+        <div class="table-search"><input id="structSearch" placeholder="搜索表名..." oninput="renderStructure()"></div>
+        <table id="structTable"></table>
+      </div>
+      <div class="tab-panel" id="tabData">
+        <div class="status-filter"><label><input type="checkbox" id="dDiff" checked> 差异</label><label><input type="checkbox" id="dConsistent"> 一致</label><label><input type="checkbox" id="dSkipped" checked> 跳过</label></div>
+        <div class="table-search"><input id="dataSearch" placeholder="搜索表名..." oninput="renderData()"></div>
+        <table id="dataTable"></table>
+      </div>
+      <div class="tab-panel" id="tabSeq"><table id="seqTable"></table></div>
+      <div class="tab-panel" id="tabScript">
+        <div class="sub-tabs"><div class="sub-tab active" onclick="switchScript(this,'ddl')">DDL</div><div class="sub-tab" onclick="switchScript(this,'dml')">DML</div></div>
+        <div class="script-wrap" id="ddlWrap"><button class="copy-btn" onclick="copyScript(this)">复制</button><pre class="sql-script" id="ddlScript"></pre></div>
+        <div class="script-wrap" id="dmlWrap" style="display:none"><button class="copy-btn" onclick="copyScript(this)">复制</button><pre class="sql-script" id="dmlScript"></pre></div>
+      </div>
+      <div class="tab-panel" id="tabJson"><div class="json-view" id="jsonView"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 数据源管理 ===== -->
+<div class="view" id="view-connections">
+  <div class="card">
+    <div class="section-header"><h2>数据源列表</h2><button class="btn btn-primary" onclick="openConnModal()">+ 新增数据源</button></div>
+    <div class="msg" id="connMsg"></div>
+    <table><thead><tr><th>ID</th><th>名称</th><th>JDBC URL</th><th>用户名</th><th>Schema</th><th>元数据采集</th><th>操作</th></tr></thead><tbody id="connTableBody"></tbody></table>
+  </div>
+  <div class="view" id="metaBrowser">
+    <div class="card">
+      <div class="section-header"><h2>元数据浏览 - <span id="metaBrowserTitle"></span></h2><button class="btn" onclick="document.getElementById('metaBrowser').classList.remove('show')">关闭</button></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="switchMetaTab(this,'tables')">表</div><div class="sub-tab" onclick="switchMetaTab(this,'sequences')">序列</div></div>
+      <div id="metaTables"><table><thead><tr><th>表名</th><th>注释</th><th>分区</th><th>列数</th><th>约束数</th><th>索引数</th><th>分区数</th><th>操作</th></tr></thead><tbody id="metaTableBody"></tbody></table></div>
+      <div id="metaSequences" style="display:none"><table><thead><tr><th>序列名</th><th>类型</th><th>起始值</th><th>步长</th><th>最小值</th><th>最大值</th><th>缓存</th><th>循环</th></tr></thead><tbody id="metaSeqBody"></tbody></table></div>
+    </div>
+    <div class="view" id="metaTableDetail">
+      <div class="card">
+        <div class="section-header"><h2>表详情 - <span id="metaTableDetailTitle"></span></h2><button class="btn" onclick="document.getElementById('metaTableDetail').classList.remove('show')">返回</button></div>
+        <div id="metaTableDetailContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 比对历史 ===== -->
+<div class="view" id="view-history">
+  <div class="card">
+    <div class="card-title">比对历史</div>
+    <div class="msg" id="historyMsg"></div>
+    <table><thead><tr><th>ID</th><th>类型</th><th>时间</th><th>源</th><th>目标</th><th>结构(一致/差异)</th><th>数据(一致/差异/跳过)</th><th>状态</th><th>操作</th></tr></thead><tbody id="historyTableBody"></tbody></table>
+    <div class="pager" id="historyPager"></div>
+  </div>
+  <div class="view" id="historyDetailPanel">
+    <div class="card">
+      <div class="section-header"><h2>历史详情 #<span id="historyDetailId"></span></h2><button class="btn" onclick="document.getElementById('historyDetailPanel').classList.remove('show')">关闭</button></div>
+      <div class="summary-grid" id="historySummaryGrid"></div>
+      <div class="sub-tabs"><div class="sub-tab active" onclick="switchHistoryTab(this,'hReport')">报告JSON</div><div class="sub-tab" onclick="switchHistoryTab(this,'hDdl')">DDL</div><div class="sub-tab" onclick="switchHistoryTab(this,'hDml')">DML</div><div class="sub-tab" onclick="switchHistoryTab(this,'hOptions')">选项</div></div>
+      <div id="hReport"><div class="json-view" id="historyReportJson"></div></div>
+      <div id="hDdl" style="display:none"><div class="script-wrap"><button class="copy-btn" onclick="copyScript(this)">复制</button><pre class="sql-script" id="historyDdl"></pre></div></div>
+      <div id="hDml" style="display:none"><div class="script-wrap"><button class="copy-btn" onclick="copyScript(this)">复制</button><pre class="sql-script" id="historyDml"></pre></div></div>
+      <div id="hOptions" style="display:none"><div class="json-view" id="historyOptions"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 数据源编辑弹窗 ===== -->
+<div class="modal-overlay" id="connModal"><div class="modal">
+  <h2 id="connModalTitle">新增数据源</h2>
+  <input type="hidden" id="connId">
+  <div class="form-group"><label>名称</label><input id="connName"></div>
+  <div class="form-group"><label>JDBC URL</label><input id="connUrl"></div>
+  <div class="form-row"><div class="form-group"><label>用户名</label><input id="connUsername"></div><div class="form-group"><label>密码</label><input id="connPassword" type="password" placeholder="编辑时留空=不修改"></div></div>
+  <div class="form-group"><label>Schema</label><input id="connSchema"></div>
+  <div class="form-group"><label>备注</label><input id="connRemark"></div>
+  <div id="connTestResult" style="margin-bottom:12px"></div>
+  <div class="modal-actions"><button class="btn" onclick="testConn()">测试连接</button><button class="btn" onclick="closeConnModal()">取消</button><button class="btn btn-primary" onclick="saveConn()">保存</button></div>
+</div></div>
+
+</div>
+<script>
+let connections=[],compareResult=null,historyPage=1,currentMetaConnId=null;
+
+function switchView(n,el){document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));document.getElementById('view-'+n).classList.add('show');document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));el.classList.add('active');if(n==='connections')loadConnections();if(n==='history')loadHistory(1);}
+function parseList(v){if(!v||!v.trim())return[];return v.split(',').map(s=>s.trim()).filter(s=>s);}
+async function api(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error(await r.text());return r.json();}
+function showMsg(id,msg,ok){const el=document.getElementById(id);el.textContent=msg;el.className='msg '+(ok?'ok':'err')+' show';setTimeout(()=>el.classList.remove('show'),4000);}
+async function copyScript(btn){const pre=btn.parentElement.querySelector('pre');if(!pre)return;try{await navigator.clipboard.writeText(pre.textContent||'');btn.classList.add('copied');const t=btn.textContent;btn.textContent='已复制';setTimeout(()=>{btn.classList.remove('copied');btn.textContent=t;},1500);}catch(e){const ta=document.createElement('textarea');ta.value=pre.textContent||'';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.classList.add('copied');const t=btn.textContent;btn.textContent='已复制';setTimeout(()=>{btn.classList.remove('copied');btn.textContent=t;},1500);}}
+function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtTime(s){if(!s)return'-';try{return new Date(s).toLocaleString('zh-CN');}catch(e){return s;}}
+
+/* 数据源 */
+async function loadConnections(){try{connections=await api('/api/connections');renderConnTable();renderConnDropdowns();}catch(e){showMsg('connMsg','加载失败:'+e.message,false);}}
+function renderConnTable(){const tb=document.getElementById('connTableBody');if(!connections.length){tb.innerHTML='<tr><td colspan="7" class="empty-hint">暂无数据源</td></tr>';return;}tb.innerHTML=connections.map(c=>`<tr><td>${c.id}</td><td><b>${esc(c.name)}</b></td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.url)}</td><td>${esc(c.username)}</td><td>${esc(c.schema)}</td><td>${c.collectedAt?`<span class="badge info">${fmtTime(c.collectedAt)}</span>`:'<span class="badge skipped">未采集</span>'}</td><td style="white-space:nowrap"><button class="btn btn-success btn-sm" onclick="collectMeta(${c.id})">采集</button> <button class="btn btn-sm" onclick="browseMeta(${c.id})">浏览</button> <button class="btn btn-sm" onclick="testConnById(${c.id})">测试</button> <button class="btn btn-sm" onclick="editConn(${c.id})">编辑</button> <button class="btn btn-danger btn-sm" onclick="deleteConn(${c.id})">删除</button></td></tr>`).join('');}
+function renderConnDropdowns(){['sourceConnId','targetConnId'].forEach(id=>{const sel=document.getElementById(id);const cur=sel.value;sel.innerHTML='<option value="">-- 请选择 --</option>'+connections.map(c=>`<option value="${c.id}">${esc(c.name)} (${esc(c.schema)})</option>`).join('');sel.value=cur;});}
+function onConnSelect(side){const id=document.getElementById(side+'ConnId').value;const c=connections.find(x=>String(x.id)===id);if(!c){['Url','Username','Schema'].forEach(f=>document.getElementById(side+f).value='');document.getElementById(side+'MetaStatus').innerHTML='';return;}document.getElementById(side+'Url').value=c.url;document.getElementById(side+'Username').value=c.username;document.getElementById(side+'Schema').value=c.schema;document.getElementById(side+'MetaStatus').innerHTML=c.collectedAt?`<span class="meta-badge ok">已采集 ${fmtTime(c.collectedAt)}</span>`:`<span class="meta-badge warn">未采集元数据</span>`;}
+function openConnModal(){document.getElementById('connModalTitle').textContent='新增数据源';document.getElementById('connId').value='';['connName','connUrl','connUsername','connPassword','connSchema','connRemark'].forEach(id=>document.getElementById(id).value='');document.getElementById('connTestResult').innerHTML='';document.getElementById('connModal').classList.add('show');}
+function closeConnModal(){document.getElementById('connModal').classList.remove('show');}
+function editConn(id){const c=connections.find(x=>x.id===id);if(!c)return;document.getElementById('connModalTitle').textContent='编辑数据源';document.getElementById('connId').value=c.id;document.getElementById('connName').value=c.name;document.getElementById('connUrl').value=c.url;document.getElementById('connUsername').value=c.username;document.getElementById('connPassword').value='';document.getElementById('connSchema').value=c.schema;document.getElementById('connRemark').value=c.remark||'';document.getElementById('connTestResult').innerHTML='';document.getElementById('connModal').classList.add('show');}
+async function saveConn(){const id=document.getElementById('connId').value;const body={name:document.getElementById('connName').value,url:document.getElementById('connUrl').value,username:document.getElementById('connUsername').value,schema:document.getElementById('connSchema').value,remark:document.getElementById('connRemark').value};const pwd=document.getElementById('connPassword').value;if(pwd)body.password=pwd;try{if(id){await api('/api/connections/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}else{body.password=pwd||'';await api('/api/connections',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}closeConnModal();await loadConnections();showMsg('connMsg','保存成功',true);}catch(e){showMsg('connMsg','保存失败:'+e.message,false);}}
+async function deleteConn(id){if(!confirm('确认删除?'))return;try{await api('/api/connections/'+id,{method:'DELETE'});await loadConnections();showMsg('connMsg','删除成功',true);}catch(e){showMsg('connMsg','删除失败:'+e.message,false);}}
+async function testConnById(id){try{const r=await api('/api/connections/'+id+'/test',{method:'POST'});alert(r.success?'连接成功! schemas: '+(r.schemas||[]).join(', '):'失败: '+r.message);}catch(e){alert('测试失败:'+e.message);}}
+async function testConn(){const body={url:document.getElementById('connUrl').value,username:document.getElementById('connUsername').value,password:document.getElementById('connPassword').value,schema:document.getElementById('connSchema').value};if(!body.url||!body.username||!body.schema){document.getElementById('connTestResult').innerHTML='<span style="color:var(--red)">请填写完整</span>';return;}document.getElementById('connTestResult').innerHTML='<span style="color:var(--text-2)">测试中...</span>';try{const r=await api('/api/connections/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const el=document.getElementById('connTestResult');el.innerHTML=r.success?'<span style="color:var(--green)">✓ '+esc(r.message)+'</span>':'<span style="color:var(--red)">✗ '+esc(r.message)+'</span>';}catch(e){document.getElementById('connTestResult').innerHTML='<span style="color:var(--red)">✗ '+esc(e.message)+'</span>';}}
+async function collectMeta(id){showMsg('connMsg','采集中...',true);try{const r=await api('/api/metadata/collect/'+id,{method:'POST'});await loadConnections();showMsg('connMsg',`采集成功! ${r.tableCount}表, ${r.sequenceCount}序列, 耗时${(r.durationMs/1000).toFixed(1)}s`,true);}catch(e){showMsg('connMsg','采集失败:'+e.message,false);}}
+
+/* 元数据浏览 */
+async function browseMeta(id){currentMetaConnId=id;const c=connections.find(x=>x.id===id);document.getElementById('metaBrowserTitle').textContent=c?c.name:'';document.getElementById('metaBrowser').classList.add('show');document.getElementById('metaTableDetail').classList.remove('show');await loadMetaTables(id);await loadMetaSequences(id);}
+function switchMetaTab(el,prefix){document.querySelectorAll('#view-connections .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('metaTables').style.display=prefix==='tables'?'block':'none';document.getElementById('metaSequences').style.display=prefix==='sequences'?'block':'none';}
+async function loadMetaTables(id){try{const tables=await api('/api/metadata/'+id+'/tables');document.getElementById('metaTableBody').innerHTML=tables.length?tables.map(t=>`<tr><td><b>${esc(t.tableName)}</b></td><td>${esc(t.comment||'')}</td><td>${t.partitioned?`<span class="badge info">${partitionStrategyLabel(t.partitionStrategy)}</span>`:'-'}</td><td>${t.columnCount}</td><td>${t.constraintCount}</td><td>${t.indexCount}</td><td>${t.partitionCount||'-'}</td><td><button class="btn btn-sm" onclick="viewTableDetail(${id},'${esc(t.tableName)}')">详情</button></td></tr>`).join(''):'<tr><td colspan="8" class="empty-hint">暂无数据，请先采集</td></tr>';}catch(e){showMsg('connMsg','加载失败:'+e.message,false);}}
+async function loadMetaSequences(id){try{const seqs=await api('/api/metadata/'+id+'/sequences');document.getElementById('metaSeqBody').innerHTML=seqs.length?seqs.map(s=>`<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.dataType||'')}</td><td>${s.startValue}</td><td>${s.incrementBy}</td><td>${s.minValue}</td><td>${s.maxValue}</td><td>${s.cacheSize}</td><td>${s.cycle?'是':'否'}</td></tr>`).join(''):'<tr><td colspan="8" class="empty-hint">无序列</td></tr>';}catch(e){}}
+async function viewTableDetail(id,name){try{const d=await api('/api/metadata/'+id+'/tables/'+encodeURIComponent(name));document.getElementById('metaTableDetailTitle').textContent=name;let html='';if(d.partitioned){html+=`<p style="margin-bottom:12px"><span class="badge info">分区表</span> 策略:${partitionStrategyLabel(d.partitionStrategy)} 键:${esc(d.partitionKey||'')}</p>`;}html+='<h3>字段</h3><table><thead><tr><th>#</th><th>列名</th><th>类型</th><th>可空</th><th>默认值</th><th>注释</th></tr></thead><tbody>';d.columns.forEach(c=>{html+=`<tr><td>${c.ordinal}</td><td><b>${esc(c.name)}</b></td><td>${esc(c.dataType)}</td><td>${c.nullable?'是':'<span style="color:var(--red)">否</span>'}</td><td>${esc(c.defaultValue||'-')}</td><td>${esc(c.comment||'')}</td></tr>`;});html+='</tbody></table>';if(d.constraints&&d.constraints.length){html+='<h3>约束</h3><table><thead><tr><th>名称</th><th>类型</th><th>定义</th><th>列</th><th>引用表</th></tr></thead><tbody>';d.constraints.forEach(c=>{html+=`<tr><td>${esc(c.name)}</td><td>${constraintTypeLabel(c.type)}</td><td>${esc(c.definition||'')}</td><td>${esc(c.columns||'')}</td><td>${esc(c.refTable||'-')}</td></tr>`;});html+='</tbody></table>';}if(d.indexes&&d.indexes.length){html+='<h3>索引</h3><table><thead><tr><th>名称</th><th>列</th><th>唯一</th><th>部分</th><th>定义</th></tr></thead><tbody>';d.indexes.forEach(i=>{html+=`<tr><td>${esc(i.name)}</td><td>${esc(i.columns||'')}</td><td>${i.unique?'是':'否'}</td><td>${i.partial?'是':'否'}</td><td>${esc(i.definition||'')}</td></tr>`;});html+='</tbody></table>';}if(d.partitions&&d.partitions.length){html+='<h3>分区</h3><table><thead><tr><th>#</th><th>分区名</th><th>父分区</th><th>边界</th><th>子分区</th><th>估算行数</th></tr></thead><tbody>';d.partitions.forEach(p=>{html+=`<tr><td>${p.ordinal}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.parentName||'-')}</td><td>${esc(p.boundaryExpr||'-')}</td><td>${p.subPartition?'是':'否'}</td><td>${p.estimatedRows||0}</td></tr>`;});html+='</tbody></table>';}document.getElementById('metaTableDetailContent').innerHTML=html;document.getElementById('metaTableDetail').classList.add('show');}catch(e){showMsg('connMsg','加载失败:'+e.message,false);}}
+
+/* 比对 */
+async function runCompare(type){const sid=document.getElementById('sourceConnId').value;const tid=document.getElementById('targetConnId').value;if(!sid||!tid){showMsg('errorMsg','请选择源和目标数据源',false);return;}document.getElementById('errorMsg').classList.remove('show');document.getElementById('loadingText').textContent=type==='structure'?'结构比对中(基于平台库元数据)...':type==='data'?'数据比对中(实时连库)...':'联合比对中...';document.getElementById('loading').classList.add('show');document.getElementById('compareResult').classList.remove('show');['btnStructure','btnData','btnBoth'].forEach(id=>document.getElementById(id).disabled=true);const body={sourceConnectionId:parseInt(sid),targetConnectionId:parseInt(tid),parallelism:parseInt(document.getElementById('parallelism').value),chunkSize:parseInt(document.getElementById('chunkSize').value),drillDown:document.getElementById('drillDown').value==='true',checksumFunction:document.getElementById('checksumFunction').value,syncDirection:document.getElementById('syncDirection').value,maxDisplayRows:parseInt(document.getElementById('maxDisplayRows').value),includeTables:parseList(document.getElementById('includeTables').value),excludeTables:parseList(document.getElementById('excludeTables').value),dataCompareTables:parseList(document.getElementById('dataCompareTables').value),generateDdl:document.getElementById('generateDdl').checked,generateDml:document.getElementById('generateDml').checked};try{const url='/api/compare/'+type;compareResult=await api(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});renderResult();}catch(e){showMsg('errorMsg','比对失败:'+e.message,false);}finally{document.getElementById('loading').classList.remove('show');['btnStructure','btnData','btnBoth'].forEach(id=>document.getElementById(id).disabled=false);}}
+function renderResult(){const r=compareResult.report;document.getElementById('schemaInfo').textContent=`源:${r.sourceSchema} → 目标:${r.targetSchema}`;document.getElementById('summaryGrid').innerHTML=`<div class="summary-box green"><div class="label">结构一致</div><div class="value">${r.structureConsistent}</div></div><div class="summary-box red"><div class="label">结构差异</div><div class="value">${r.structureDifferent}</div></div><div class="summary-box green"><div class="label">数据一致</div><div class="value">${r.dataConsistent}</div></div><div class="summary-box red"><div class="label">数据差异</div><div class="value">${r.dataDifferent}</div></div><div class="summary-box gray"><div class="label">数据跳过</div><div class="value">${r.dataSkipped}</div></div>`;renderStructure();renderData();renderSequences();document.getElementById('ddlScript').textContent=[compareResult.sequenceDdlScript,compareResult.ddlScript].filter(s=>s&&s.trim()).join('\n\n')||'-- 无DDL';document.getElementById('dmlScript').textContent=compareResult.dmlScript||'-- 无DML';document.getElementById('jsonView').textContent=JSON.stringify(compareResult.report,null,2);document.getElementById('compareResult').classList.add('show');}
+function switchTab(el){document.querySelectorAll('#view-compare .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById(el.dataset.target).classList.add('active');}
+function switchScript(el,type){document.querySelectorAll('#tabScript .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('ddlWrap').style.display=type==='ddl'?'block':'none';document.getElementById('dmlWrap').style.display=type==='dml'?'block':'none';}
+function structBadge(s){return `<span class="badge ${s==='CONSISTENT'?'consistent':'different'}">${structStatusLabel(s)}</span>`;}
+function structStatusLabel(s){return {CONSISTENT:'一致',DIFFERENT:'差异',EXTRACTION_FAILED:'抽取失败'}[s]||s;}
+function dataBadge(s){return `<span class="badge ${s==='CONSISTENT'?'consistent':s==='DIFFERENT'?'different':'skipped'}">${dataStatusLabel(s)}</span>`;}
+function dataStatusLabel(s){return {CONSISTENT:'一致',DIFFERENT:'差异',SKIPPED:'跳过'}[s]||s;}
+function diffTypeLabel(t){return {
+  TABLE_MISSING_IN_TARGET:'目标库缺失表',TABLE_EXTRA_IN_TARGET:'目标库多余表',
+  COLUMN_MISSING_IN_TARGET:'目标库缺失字段',COLUMN_EXTRA_IN_TARGET:'目标库多余字段',COLUMN_MISMATCH:'字段不一致',
+  CONSTRAINT_MISSING_IN_TARGET:'目标库缺失约束',CONSTRAINT_EXTRA_IN_TARGET:'目标库多余约束',CONSTRAINT_MISMATCH:'约束不一致',
+  INDEX_MISSING_IN_TARGET:'目标库缺失索引',INDEX_EXTRA_IN_TARGET:'目标库多余索引',INDEX_MISMATCH:'索引不一致',
+  TABLE_COMMENT_MISMATCH:'表注释不一致',
+  SEQUENCE_MISSING_IN_TARGET:'目标库缺失序列',SEQUENCE_EXTRA_IN_TARGET:'目标库多余序列',SEQUENCE_MISMATCH:'序列不一致',
+  PARTITION_MISSING_IN_TARGET:'目标库缺失分区',PARTITION_EXTRA_IN_TARGET:'目标库多余分区',PARTITION_MISMATCH:'分区不一致',
+  PARTITION_STRATEGY_MISMATCH:'分区策略不一致'
+}[t]||t;}
+function rowDiffTypeLabel(t){return {MISSING_IN_TARGET:'目标库缺失',EXTRA_IN_TARGET:'目标库多余',MISMATCH:'不一致'}[t]||t;}
+function constraintTypeLabel(t){return {p:'主键(P)',u:'唯一(U)',f:'外键(F)',c:'检查(C)'}[t]||t;}
+function partitionStrategyLabel(s){return {r:'范围(RANGE)',l:'列表(LIST)',h:'哈希(HASH)'}[s]||s;}
+function fieldLabel(f){return {dataType:'数据类型',nullable:'是否可空',defaultValue:'默认值',comment:'注释',incrementBy:'步长',cycle:'是否循环',minValue:'最小值',maxValue:'最大值',cacheSize:'缓存大小',startValue:'起始值'}[f]||f;}
+function renderStructure(){const search=document.getElementById('structSearch').value.toLowerCase();const fD=document.getElementById('fDiff').checked,fC=document.getElementById('fConsistent').checked,fM=document.getElementById('fMissing').checked,fE=document.getElementById('fExtra').checked;let rows=(compareResult.report.structureDiff.tableDiffs||[]).filter(t=>{if(search&&!t.tableName.toLowerCase().includes(search))return false;if(t.status==='CONSISTENT')return fC;if(!t.existsInSource&&fE)return true;if(!t.existsInTarget&&fM)return true;if(t.existsInSource&&t.existsInTarget&&fD)return true;return false;});let html='<thead><tr><th>表名</th><th>状态</th><th>列差异</th><th>约束</th><th>索引</th><th>分区</th><th>操作</th></tr></thead><tbody>';rows.forEach((t,i)=>{html+=`<tr><td><b>${esc(t.tableName)}</b></td><td>${structBadge(t.status)}</td><td>${t.columnDiffs?.length||'-'}</td><td>${t.constraintDiffs?.length||'-'}</td><td>${t.indexDiffs?.length||'-'}</td><td>${t.partitionDiffs?.length||'-'}</td><td>${t.status!=='CONSISTENT'?`<button class="expand-btn" onclick="toggleDetail('s${i}')">详情</button>`:''}</td></tr>`;if(t.status!=='CONSISTENT'){html+=`<tr class="detail-row" id="s${i}"><td colspan="7">`;if(t.columnDiffs?.length){html+='<table><thead><tr><th>类型</th><th>列名</th><th>源</th><th>目标</th><th>字段</th></tr></thead><tbody>';t.columnDiffs.forEach(c=>{html+=`<tr><td>${diffTypeLabel(c.type)}</td><td>${esc(c.columnName||'-')}</td><td class="diff-value">${esc(c.sourceValue||'-')}</td><td class="diff-value">${esc(c.targetValue||'-')}</td><td>${fieldLabel(c.field)||'-'}</td></tr>`;});html+='</tbody></table>';}if(t.constraintDiffs?.length){html+='<table><thead><tr><th>类型</th><th>约束名</th><th>源</th><th>目标</th></tr></thead><tbody>';t.constraintDiffs.forEach(c=>{html+=`<tr><td>${diffTypeLabel(c.type)}</td><td>${esc(c.constraintName)}</td><td class="diff-value">${esc(c.sourceDef||'-')}</td><td class="diff-value">${esc(c.targetDef||'-')}</td></tr>`;});html+='</tbody></table>';}if(t.indexDiffs?.length){html+='<table><thead><tr><th>类型</th><th>索引名</th><th>源</th><th>目标</th></tr></thead><tbody>';t.indexDiffs.forEach(d=>{html+=`<tr><td>${diffTypeLabel(d.type)}</td><td>${esc(d.indexName)}</td><td class="diff-value">${esc(d.sourceDef||'-')}</td><td class="diff-value">${esc(d.targetDef||'-')}</td></tr>`;});html+='</tbody></table>';}if(t.partitionDiffs?.length){html+='<table><thead><tr><th>类型</th><th>分区名</th><th>源</th><th>目标</th></tr></thead><tbody>';t.partitionDiffs.forEach(p=>{html+=`<tr><td>${diffTypeLabel(p.type)}</td><td>${esc(p.partitionName)}</td><td class="diff-value">${esc(p.sourceBoundary||'-')}</td><td class="diff-value">${esc(p.targetBoundary||'-')}</td></tr>`;});html+='</tbody></table>';}html+='</td></tr>';}});html+='</tbody>';document.getElementById('structTable').innerHTML=html;}
+function renderData(){const search=document.getElementById('dataSearch').value.toLowerCase();const fD=document.getElementById('dDiff').checked,fC=document.getElementById('dConsistent').checked,fS=document.getElementById('dSkipped').checked;let rows=(compareResult.report.dataDiff?.tableDiffs||[]).filter(t=>{if(search&&!t.tableName.toLowerCase().includes(search))return false;if(t.status==='CONSISTENT')return fC;if(t.status==='DIFFERENT')return fD;if(t.status==='SKIPPED')return fS;return false;});let html='<thead><tr><th>表名</th><th>状态</th><th>源行数</th><th>目标行数</th><th>块统计</th><th>行差异</th><th>操作</th></tr></thead><tbody>';rows.forEach((t,i)=>{const cs=t.chunkStats;html+=`<tr><td><b>${esc(t.tableName)}</b></td><td>${dataBadge(t.status)}</td><td>${(t.sourceRowCount||0).toLocaleString()}</td><td>${(t.targetRowCount||0).toLocaleString()}</td><td>${cs?`共${cs.total}/一致${cs.consistent}/差异${cs.mismatched}`:'-'}</td><td>${t.rowDiffs?.length||0}</td><td>${t.status==='DIFFERENT'&&t.rowDiffs?.length?`<button class="expand-btn" onclick="toggleDetail('d${i}')">详情</button>`:''}</td></tr>`;if(t.status==='DIFFERENT'&&t.rowDiffs?.length){html+=`<tr class="detail-row" id="d${i}"><td colspan="7"><table><thead><tr><th>类型</th><th>主键</th><th>源值</th><th>目标值</th><th>不匹配列</th></tr></thead><tbody>`;t.rowDiffs.forEach(r=>{html+=`<tr><td>${rowDiffTypeLabel(r.type)}</td><td>${JSON.stringify(r.keyValues)}</td><td class="diff-value">${JSON.stringify(r.sourceValues)}</td><td class="diff-value">${JSON.stringify(r.targetValues)}</td><td>${(r.mismatchColumns||[]).join(', ')}</td></tr>`;});html+='</tbody></table></td></tr>';}if(t.status==='SKIPPED'&&t.skippedReason){html+=`<tr class="detail-row" id="d${i}"><td colspan="7"><p style="color:var(--text-2)">跳过原因: ${esc(t.skippedReason)}</p></td></tr>`;}});html+='</tbody>';document.getElementById('dataTable').innerHTML=html;}
+function renderSequences(){const seqs=compareResult.report.structureDiff?.sequenceDiffs||[];let html='<thead><tr><th>类型</th><th>序列名</th><th>源定义</th><th>目标定义</th><th>差异字段</th></tr></thead><tbody>';if(!seqs.length){html+='<tr><td colspan="5" class="empty-hint">无序列差异</td></tr>';}else{seqs.forEach(s=>{html+=`<tr><td><span class="badge ${s.type.includes('MISSING')?'different':'info'}">${diffTypeLabel(s.type)}</span></td><td><b>${esc(s.sequenceName)}</b></td><td class="diff-value">${esc(s.sourceDef||'-')}</td><td class="diff-value">${esc(s.targetDef||'-')}</td><td>${fieldLabel(s.mismatchField)||'-'}</td></tr>`;});}html+='</tbody>';document.getElementById('seqTable').innerHTML=html;}
+function toggleDetail(id){document.getElementById(id).classList.toggle('show');}
+
+/* 历史 */
+async function loadHistory(page){historyPage=page;try{const d=await api(`/api/history?page=${page}&size=20`);renderHistory(d);}catch(e){showMsg('historyMsg','加载失败:'+e.message,false);}}
+function renderHistory(d){const tb=document.getElementById('historyTableBody');if(!d.items.length){tb.innerHTML='<tr><td colspan="9" class="empty-hint">暂无历史</td></tr>';document.getElementById('historyPager').innerHTML='';return;}tb.innerHTML=d.items.map(h=>{const cls=h.status==='SUCCESS'?'success':'failed';return `<tr><td>${h.id}</td><td><span class="badge info">${h.compareType||'-'}</span></td><td>${fmtTime(h.createdAt)}</td><td>${esc(h.sourceConnectionName||'-')}<br><span style="color:var(--text-3)">${esc(h.sourceSchema||'')}</span></td><td>${esc(h.targetConnectionName||'-')}<br><span style="color:var(--text-3)">${esc(h.targetSchema||'')}</span></td><td><span style="color:var(--green)">${h.structureConsistent}</span> / <span style="color:var(--red)">${h.structureDifferent}</span></td><td><span style="color:var(--green)">${h.dataConsistent}</span> / <span style="color:var(--red)">${h.dataDifferent}</span> / <span style="color:var(--text-2)">${h.dataSkipped}</span></td><td><span class="badge ${cls}">${h.status}</span></td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="viewHistory(${h.id})">详情</button> <button class="btn btn-danger btn-sm" onclick="deleteHistory(${h.id})">删除</button></td></tr>`;}).join('');const pg=document.getElementById('historyPager');if(d.totalPages>1){let l='';for(let i=1;i<=d.totalPages;i++){l+=`<button class="btn btn-sm" ${i===historyPage?'disabled':''} onclick="loadHistory(${i})">${i}</button> `;}pg.innerHTML=l;}else{pg.innerHTML='';}}
+async function viewHistory(id){try{const h=await api('/api/history/'+id);document.getElementById('historyDetailId').textContent=id;document.getElementById('historySummaryGrid').innerHTML=`<div class="summary-box green"><div class="label">结构一致</div><div class="value">${h.structureConsistent}</div></div><div class="summary-box red"><div class="label">结构差异</div><div class="value">${h.structureDifferent}</div></div><div class="summary-box green"><div class="label">数据一致</div><div class="value">${h.dataConsistent}</div></div><div class="summary-box red"><div class="label">数据差异</div><div class="value">${h.dataDifferent}</div></div><div class="summary-box gray"><div class="label">数据跳过</div><div class="value">${h.dataSkipped}</div></div>`;document.getElementById('historyReportJson').textContent=h.reportJson?JSON.stringify(JSON.parse(h.reportJson),null,2):'(无)';document.getElementById('historyDdl').textContent=h.ddlScript||'-- 无DDL';document.getElementById('historyDml').textContent=h.dmlScript||'-- 无DML';document.getElementById('historyOptions').textContent=h.optionsJson?JSON.stringify(JSON.parse(h.optionsJson),null,2):'(无)';document.getElementById('historyDetailPanel').classList.add('show');}catch(e){showMsg('historyMsg','加载失败:'+e.message,false);}}
+async function deleteHistory(id){if(!confirm('确认删除?'))return;try{await api('/api/history/'+id,{method:'DELETE'});await loadHistory(historyPage);showMsg('historyMsg','删除成功',true);}catch(e){showMsg('historyMsg','删除失败:'+e.message,false);}}
+function switchHistoryTab(el,prefix){document.querySelectorAll('#view-history .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');['hReport','hDdl','hDml','hOptions'].forEach(id=>document.getElementById(id).style.display='none');document.getElementById(prefix).style.display='block';}
+window.addEventListener('load',loadConnections);
+</script>
+</body>
+</html>

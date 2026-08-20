@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: gausscmp
+  datasource:
+    url: jdbc:mysql://localhost:3306/lotusdb?allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: lotus
+    password: lotus123
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.MySQLDialect
+    show-sql: false
+    open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 50MB
+server:
+  port: 8080
+logging:
+  level:
+    com.lotus.gausscmp: INFO
+    org.springframework: WARN
+    org.hibernate: WARN

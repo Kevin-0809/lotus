@@ -23,7 +23,8 @@ public final class OpenGaussMetadataReader implements MetadataReader {
                 throw new RuntimeException("抽取表元数据失败: " + schema + "." + name, e);
             }
         }
-        return new SchemaSnapshot(schema, tables);
+        List<SequenceMeta> sequences = readSequences(conn, schema);
+        return new SchemaSnapshot(schema, tables, sequences);
     }
 
     private List<String> readTableNames(Connection conn, String schema) {
@@ -52,7 +53,17 @@ public final class OpenGaussMetadataReader implements MetadataReader {
         List<ConstraintMeta> constraints = readConstraints(conn, schema, tableName);
         List<IndexMeta> indexes = readIndexes(conn, schema, tableName);
         boolean partitioned = checkPartitioned(conn, schema, tableName);
-        return new TableMeta(tableName, comment, columns, constraints, indexes, partitioned);
+        String partitionStrategy = null;
+        String partitionKey = null;
+        List<PartitionMeta> partitions = List.of();
+        if (partitioned) {
+            var info = readPartitionInfo(conn, schema, tableName);
+            partitionStrategy = info.strategy();
+            partitionKey = info.key();
+            partitions = readPartitions(conn, schema, tableName);
+        }
+        return new TableMeta(tableName, comment, columns, constraints, indexes,
+            partitioned, partitionStrategy, partitionKey, partitions);
     }
 
     private String readTableComment(Connection conn, String schema, String table) throws Exception {
@@ -81,7 +92,7 @@ public final class OpenGaussMetadataReader implements MetadataReader {
                     cols.add(new ColumnMeta(
                         rs.getString("attname"),
                         TypeNormalizer.normalize(rs.getString("type")),
-                        rs.getBoolean("attnotnull"),
+                        !rs.getBoolean("attnotnull"),
                         DefinitionNormalizer.normalizeDefaultValue(rs.getString("defaultval")),
                         rs.getString("colcomment"),
                         rs.getInt("attnum")));
@@ -164,6 +175,95 @@ public final class OpenGaussMetadataReader implements MetadataReader {
         return idxs;
     }
 
+    private record PartitionInfo(String strategy, String key) {}
+
+    private PartitionInfo readPartitionInfo(Connection conn, String schema, String table) throws Exception {
+        String sql = """
+            SELECT p.partstrategy,
+                   (SELECT string_agg(a.attname, ',' ORDER BY k.ord)
+                    FROM unnest(p.partkey) WITH ORDINALITY k(attnum, ord)
+                    JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = k.attnum) AS partkey
+            FROM pg_partition p
+            JOIN pg_class c ON c.oid = p.parentid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = ? AND c.relname = ? AND p.parttype = 'r'
+            LIMIT 1
+            """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, schema); ps.setString(2, table);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new PartitionInfo(rs.getString("partstrategy"), rs.getString("partkey"));
+                }
+            }
+        }
+        return new PartitionInfo(null, null);
+    }
+
+    private List<PartitionMeta> readPartitions(Connection conn, String schema, String table) throws Exception {
+        String sql = """
+            SELECT p.relname AS partname,
+                   p.boundaries,
+                   p.reltuples::bigint AS est_rows,
+                   p.reltablespace,
+                   p.partstrategy
+            FROM pg_partition p
+            JOIN pg_class c ON c.oid = p.parentid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = ? AND c.relname = ? AND p.parttype = 'p'
+            ORDER BY p.relname
+            """;
+        List<PartitionMeta> parts = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, schema); ps.setString(2, table);
+            try (ResultSet rs = ps.executeQuery()) {
+                int ordinal = 0;
+                while (rs.next()) {
+                    java.sql.Array boundArr = rs.getArray("boundaries");
+                    String boundary = boundArr != null ? boundArr.toString() : null;
+                    if (boundary != null) {
+                        boundary = boundary.replaceAll("(?i)\\bNULL\\b", "MAXVALUE");
+                    }
+                    parts.add(new PartitionMeta(
+                        rs.getString("partname"),
+                        table,
+                        ordinal++,
+                        boundary,
+                        false,
+                        null,
+                        rs.getLong("est_rows")
+                    ));
+                }
+            }
+        }
+        return parts;
+    }
+
+    private List<SequenceMeta> readSequences(Connection conn, String schema) {
+        String sql = """
+            SELECT c.relname AS seqname
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = ? AND c.relkind = 'S'
+            ORDER BY c.relname
+            """;
+        List<SequenceMeta> seqs = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, schema);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    seqs.add(new SequenceMeta(
+                        rs.getString("seqname"),
+                        "bigint", 1L, 1L, 1L, Long.MAX_VALUE, 1L, false
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("读取序列失败: " + schema, e);
+        }
+        return seqs;
+    }
+
     private List<String> parseColumnNames(String colnames) {
         if (colnames == null || colnames.isBlank()) return List.of();
         return Arrays.stream(colnames.split(","))
@@ -174,9 +274,13 @@ public final class OpenGaussMetadataReader implements MetadataReader {
 
     private boolean checkPartitioned(Connection conn, String schema, String table) throws Exception {
         String sql = """
-            SELECT c.parttype = 'p' AS ispart
-            FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE n.nspname = ? AND c.relname = ? AND c.relkind IN ('r', 'p')
+            SELECT EXISTS(
+                SELECT 1 FROM pg_partition p
+                JOIN pg_class c ON c.oid = p.parentid
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = ? AND c.relname = ?
+                  AND p.parttype = 'r'
+            ) AS ispart
             """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, schema); ps.setString(2, table);

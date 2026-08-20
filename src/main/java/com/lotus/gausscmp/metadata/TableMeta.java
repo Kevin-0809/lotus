@@ -5,7 +5,16 @@ import java.util.Optional;
 
 public record TableMeta(String name, String comment, List<ColumnMeta> columns,
                         List<ConstraintMeta> constraints, List<IndexMeta> indexes,
-                        boolean partitioned) {
+                        boolean partitioned,
+                        String partitionStrategy, String partitionKey,
+                        List<PartitionMeta> partitions) {
+
+    public TableMeta(String name, String comment, List<ColumnMeta> columns,
+                     List<ConstraintMeta> constraints, List<IndexMeta> indexes,
+                     boolean partitioned) {
+        this(name, comment, columns, constraints, indexes, partitioned, null, null, List.of());
+    }
+
     public Optional<ConstraintMeta> primaryKey() {
         return constraints.stream()
             .filter(c -> c.type() == ConstraintType.PRIMARY)
