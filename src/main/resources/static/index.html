@@ -97,6 +97,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
 
 /* Sub tabs */
 .sub-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+.diff-categories { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.diff-category { background: #fff; border: 1px solid var(--border); border-radius: 999px; color: var(--text-2); padding: 6px 12px; cursor: pointer; font-size: 12px; }
+.diff-category:hover, .diff-category.active { background: var(--primary-bg); border-color: var(--primary); color: var(--primary); }
+.diff-category b { font-weight: 600; margin-left: 4px; }
 .sub-tab { padding: 5px 12px; cursor: pointer; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--card); font-size: 12px; color: var(--text-2); transition: all .15s; }
 .sub-tab:hover { border-color: var(--text-3); }
 .sub-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -270,6 +274,7 @@ pre.sql-script { background: #1e293b; color: #e2e8f0; padding: 16px; border-radi
       <div class="tab-panel active" id="tabStructure">
         <div class="status-filter"><label><input type="checkbox" id="fDiff" checked> 差异</label><label><input type="checkbox" id="fConsistent"> 一致</label><label><input type="checkbox" id="fMissing"> 源缺失</label><label><input type="checkbox" id="fExtra"> 目标多余</label></div>
         <div class="table-search"><input id="structSearch" placeholder="搜索表名..." oninput="renderStructure()"></div>
+        <div class="diff-categories" id="diffCategories"></div>
         <table id="structTable"></table>
       </div>
       <div class="tab-panel" id="tabData">
@@ -405,6 +410,39 @@ function renderStructure(){const search=document.getElementById('structSearch').
 function renderData(){const search=document.getElementById('dataSearch').value.toLowerCase();const fD=document.getElementById('dDiff').checked,fC=document.getElementById('dConsistent').checked,fS=document.getElementById('dSkipped').checked;let rows=(compareResult.report.dataDiff?.tableDiffs||[]).filter(t=>{if(search&&!t.tableName.toLowerCase().includes(search))return false;if(t.status==='CONSISTENT')return fC;if(t.status==='DIFFERENT')return fD;if(t.status==='SKIPPED')return fS;return false;});let html='<thead><tr><th>表名</th><th>状态</th><th>源行数</th><th>目标行数</th><th>块统计</th><th>行差异</th><th>操作</th></tr></thead><tbody>';rows.forEach((t,i)=>{const cs=t.chunkStats;html+=`<tr><td><b>${esc(t.tableName)}</b></td><td>${dataBadge(t.status)}</td><td>${(t.sourceRowCount||0).toLocaleString()}</td><td>${(t.targetRowCount||0).toLocaleString()}</td><td>${cs?`共${cs.total}/一致${cs.consistent}/差异${cs.mismatched}`:'-'}</td><td>${t.rowDiffs?.length||0}</td><td>${t.status==='DIFFERENT'&&t.rowDiffs?.length?`<button class="expand-btn" onclick="toggleDetail('d${i}')">详情</button>`:''}</td></tr>`;if(t.status==='DIFFERENT'&&t.rowDiffs?.length){html+=`<tr class="detail-row" id="d${i}"><td colspan="7"><table><thead><tr><th>类型</th><th>主键</th><th>源值</th><th>目标值</th><th>不匹配列</th></tr></thead><tbody>`;t.rowDiffs.forEach(r=>{html+=`<tr><td>${rowDiffTypeLabel(r.type)}</td><td>${JSON.stringify(r.keyValues)}</td><td class="diff-value">${JSON.stringify(r.sourceValues)}</td><td class="diff-value">${JSON.stringify(r.targetValues)}</td><td>${(r.mismatchColumns||[]).join(', ')}</td></tr>`;});html+='</tbody></table></td></tr>';}if(t.status==='SKIPPED'&&t.skippedReason){html+=`<tr class="detail-row" id="d${i}"><td colspan="7"><p style="color:var(--text-2)">跳过原因: ${esc(t.skippedReason)}</p></td></tr>`;}});html+='</tbody>';document.getElementById('dataTable').innerHTML=html;}
 function renderSequences(){const seqs=compareResult.report.structureDiff?.sequenceDiffs||[];let html='<thead><tr><th>类型</th><th>序列名</th><th>源定义</th><th>目标定义</th><th>差异字段</th></tr></thead><tbody>';if(!seqs.length){html+='<tr><td colspan="5" class="empty-hint">无序列差异</td></tr>';}else{seqs.forEach(s=>{html+=`<tr><td><span class="badge ${s.type.includes('MISSING')?'different':'info'}">${diffTypeLabel(s.type)}</span></td><td><b>${esc(s.sequenceName)}</b></td><td class="diff-value">${esc(s.sourceDef||'-')}</td><td class="diff-value">${esc(s.targetDef||'-')}</td><td>${fieldLabel(s.mismatchField)||'-'}</td></tr>`;});}html+='</tbody>';document.getElementById('seqTable').innerHTML=html;}
 function toggleDetail(id){document.getElementById(id).classList.toggle('show');}
+
+let structureCategory='all';
+function structureEntries(){
+  const result=compareResult?.report?.structureDiff||{};
+  const entries=[];
+  (result.tableDiffs||[]).forEach(t=>{
+    const add=(category,kind,name,source,target,type,field)=>entries.push({category,kind,table:t.tableName,name,source,target,type,field});
+    (t.columnDiffs||[]).forEach(d=>add(d.field==='comment'?'comment':d.field==='defaultValue'?'default':(d.field==='dataType'||d.field==='nullable'||d.type.includes('COLUMN_')?'field':'other'),'字段',d.columnName,d.sourceValue,d.targetValue,d.type,d.field));
+    (t.constraintDiffs||[]).forEach(d=>add('other','约束',d.constraintName,d.sourceDef,d.targetDef,d.type,''));
+    (t.indexDiffs||[]).forEach(d=>add('other','索引',d.indexName,d.sourceDef,d.targetDef,d.type,''));
+    (t.partitionDiffs||[]).forEach(d=>add('partition','分区',d.partitionName,d.sourceBoundary,d.targetBoundary,d.type,''));
+    if(t.commentDiff) add('comment','表注释',t.tableName,t.commentDiff,null,'TABLE_COMMENT_MISMATCH','comment');
+    if(!t.existsInSource||!t.existsInTarget) add('other','表',t.tableName,t.existsInSource?'存在':'缺失',t.existsInTarget?'存在':'缺失',t.existsInSource?'TABLE_EXTRA_IN_TARGET':'TABLE_MISSING_IN_TARGET','');
+  });
+  (result.sequenceDiffs||[]).forEach(d=>addSequenceEntry(entries,d));
+  return entries;
+}
+function addSequenceEntry(entries,d){entries.push({category:'other',kind:'序列',table:'序列',name:d.sequenceName,source:d.sourceDef,target:d.targetDef,type:d.type,field:d.mismatchField});}
+function diffCategoryLabel(c){return {all:'全部',field:'字段差异',comment:'注释差异',default:'默认值差异',partition:'分区差异',other:'其他差异'}[c]||c;}
+function renderDiffCategories(entries){
+  const cats=['all','field','comment','default','partition','other'];
+  document.getElementById('diffCategories').innerHTML=cats.map(c=>{const n=c==='all'?entries.length:entries.filter(e=>e.category===c).length;return `<button class="diff-category ${structureCategory===c?'active':''}" onclick="selectStructureCategory('${c}')">${diffCategoryLabel(c)} <b>${n}</b></button>`;}).join('');
+}
+function selectStructureCategory(category){structureCategory=category;renderStructure();}
+function renderStructure(){
+  const search=(document.getElementById('structSearch').value||'').toLowerCase();
+  const entries=structureEntries().filter(e=>(structureCategory==='all'||e.category===structureCategory)&&(!search||e.table.toLowerCase().includes(search)||String(e.name).toLowerCase().includes(search)));
+  renderDiffCategories(structureEntries());
+  let html='<thead><tr><th>表名</th><th>对象类型</th><th>对象名</th><th>差异类型</th><th>源端</th><th>目标端</th><th>字段</th></tr></thead><tbody>';
+  if(!entries.length) html+='<tr><td colspan="7" class="empty-hint">当前分类暂无差异</td></tr>';
+  entries.forEach(e=>{html+=`<tr><td><b>${esc(e.table)}</b></td><td>${e.kind}</td><td>${esc(e.name||'-')}</td><td><span class="badge different">${diffTypeLabel(e.type)}</span></td><td class="diff-value">${esc(e.source||'-')}</td><td class="diff-value">${esc(e.target||'-')}</td><td>${fieldLabel(e.field)||'-'}</td></tr>`;});
+  document.getElementById('structTable').innerHTML=html+'</tbody>';
+}
 
 /* 历史 */
 async function loadHistory(page){historyPage=page;try{const d=await api(`/api/history?page=${page}&size=20`);renderHistory(d);}catch(e){showMsg('historyMsg','加载失败:'+e.message,false);}}
