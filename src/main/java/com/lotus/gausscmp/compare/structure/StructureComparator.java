@@ -88,7 +88,10 @@ public final class StructureComparator {
             IndexMeta si = sm.get(n), ti = tm.get(n);
             if (si == null) { diffs.add(new IndexDiff(DiffType.INDEX_EXTRA_IN_TARGET, n, null, null)); continue; }
             if (ti == null) { diffs.add(new IndexDiff(DiffType.INDEX_MISSING_IN_TARGET, n, si.definition(), null)); continue; }
-            if (!eq(DefinitionNormalizer.normalize(si.definition(), s.name()), DefinitionNormalizer.normalize(ti.definition(), t.name()))) diffs.add(new IndexDiff(DiffType.INDEX_MISMATCH, n, si.definition(), ti.definition()));
+            if (!eq(DefinitionNormalizer.normalizeIndexDefinition(si.definition(), s.name(), s.partitioned()),
+                     DefinitionNormalizer.normalizeIndexDefinition(ti.definition(), t.name(), t.partitioned()))) {
+                diffs.add(new IndexDiff(DiffType.INDEX_MISMATCH, n, si.definition(), ti.definition()));
+            }
         }
         return diffs;
     }

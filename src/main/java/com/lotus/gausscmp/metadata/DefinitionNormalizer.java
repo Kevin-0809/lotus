@@ -8,6 +8,12 @@ public final class DefinitionNormalizer {
 
     private static final Pattern LOCAL_PARTITION_LIST = Pattern.compile(
         "local\\s*\\(.*?\\)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INDEX_STORAGE_OPTIONS = Pattern.compile(
+        "\\s+with\\s*\\([^)]*\\)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INDEX_TABLESPACE = Pattern.compile(
+        "\\s+tablespace\\s+[^\\s,)]+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INDEX_SCOPE = Pattern.compile(
+        "\\b(global|local)\\b", Pattern.CASE_INSENSITIVE);
 
     public static String normalize(String def) {
         if (def == null) return null;
@@ -40,6 +46,15 @@ public final class DefinitionNormalizer {
     public static String stripLocalPartitionList(String def) {
         if (def == null) return null;
         return LOCAL_PARTITION_LIST.matcher(def).replaceAll("local").trim();
+    }
+
+    public static String normalizeIndexDefinition(String def, String schema, boolean partitioned) {
+        if (def == null) return null;
+        String s = normalize(def, schema);
+        s = INDEX_STORAGE_OPTIONS.matcher(s).replaceAll("");
+        s = INDEX_TABLESPACE.matcher(s).replaceAll("");
+        if (!partitioned) s = INDEX_SCOPE.matcher(s).replaceAll(" ");
+        return s.replaceAll("\\s+", " ").trim();
     }
 
     public static String stripSchemaPrefix(String name, String schema) {
