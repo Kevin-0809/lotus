@@ -1,0 +1,87 @@
+/* ===== Linear 极简风 · 流畅交互增强层 ===== */
+
+html { scroll-behavior: smooth; }
+body { text-rendering: optimizeLegibility; }
+.config-hint { color: var(--text-3); font-size: 12px; margin: -6px 0 14px; }
+.jasypt-tool { max-width: 720px; }
+.jasypt-tool code { font-family: Consolas, monospace; }
+.input-with-action { display: flex; gap: 8px; }
+.input-with-action input { flex: 1; min-width: 0; }
+@media (max-width: 720px) {
+  .input-with-action { align-items: stretch; }
+  .input-with-action .btn { flex-shrink: 0; }
+}
+
+/* 视图切换：快速淡入 */
+.view.show { animation: viewIn .2s cubic-bezier(.22,.68,.36,1); }
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Tab 面板切换 */
+.tab-panel.active { animation: panelIn .16s ease-out; }
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 按钮微交互：轻按压回弹 */
+.btn { transition: all .2s cubic-bezier(.3,.7,.4,1); }
+.btn:active:not(:disabled) { transform: scale(.98); }
+.nav-item:active { transform: scale(.98); }
+.nav-item { transition: all .2s ease; }
+
+/* 表格行平滑悬停 */
+tbody tr { transition: background-color .1s ease; }
+
+/* 详情行展开 */
+.detail-row.show td > * { animation: panelIn .15s ease-out; }
+
+/* 弹窗：缩放淡入 */
+.modal { animation: modalIn .2s cubic-bezier(.22,.68,.36,1); }
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 消息条滑入 */
+.msg.show { animation: msgIn .18s ease-out; }
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 加载文案柔和脉冲 */
+.loading p { animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: .5; }
+  50% { opacity: 1; }
+}
+
+/* 汇总数字渐显 */
+.summary-box .value { animation: viewIn .3s ease-out; }
+
+/* 交互元素统一过渡 */
+.badge, .diff-category, .sub-tab, .expand-btn, .nav-item, .tab { transition: all .12s ease; }
+
+/* 输入框聚焦更柔和 */
+.form-group input, .form-group select, .table-search input {
+  transition: border-color .12s ease, box-shadow .12s ease, background-color .12s ease;
+}
+
+/* 行内操作按钮间距 */
+td .btn + .btn { margin-left: 4px; }
+
+/* 历史分页当前态 */
+.pager .btn[disabled] { background: #1677ff; border-color: #1677ff; color: #fff; opacity: 1; }
+
+/* 尊重减弱动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -3,6 +3,7 @@ package com.lotus.gausscmp.web;
 import com.lotus.gausscmp.web.entity.*;
 import com.lotus.gausscmp.web.repository.*;
 import com.lotus.gausscmp.web.service.MetadataCollectService;
+import com.lotus.gausscmp.web.service.MetadataHistoryService;
 import com.lotus.gausscmp.web.service.MetadataStoreService;
 import com.lotus.gausscmp.metadata.SchemaSnapshot;
 import com.lotus.gausscmp.metadata.TableMeta;
@@ -17,6 +18,7 @@ public class MetadataController {
 
     private final MetadataCollectService collectService;
     private final MetadataStoreService storeService;
+    private final MetadataHistoryService historyService;
     private final ConnectionRepository connectionRepo;
     private final MetaTableRepository tableRepo;
     private final MetaColumnRepository columnRepo;
@@ -24,18 +26,22 @@ public class MetadataController {
     private final MetaIndexRepository indexRepo;
     private final MetaSequenceRepository sequenceRepo;
     private final MetaPartitionRepository partitionRepo;
+    private final com.lotus.gausscmp.web.service.ProgressTracker progressTracker;
 
     public MetadataController(MetadataCollectService collectService,
                               MetadataStoreService storeService,
+                              MetadataHistoryService historyService,
                               ConnectionRepository connectionRepo,
                               MetaTableRepository tableRepo,
                               MetaColumnRepository columnRepo,
                               MetaConstraintRepository constraintRepo,
                               MetaIndexRepository indexRepo,
                               MetaSequenceRepository sequenceRepo,
-                              MetaPartitionRepository partitionRepo) {
+                              MetaPartitionRepository partitionRepo,
+                              com.lotus.gausscmp.web.service.ProgressTracker progressTracker) {
         this.collectService = collectService;
         this.storeService = storeService;
+        this.historyService = historyService;
         this.connectionRepo = connectionRepo;
         this.tableRepo = tableRepo;
         this.columnRepo = columnRepo;
@@ -43,11 +49,18 @@ public class MetadataController {
         this.indexRepo = indexRepo;
         this.sequenceRepo = sequenceRepo;
         this.partitionRepo = partitionRepo;
+        this.progressTracker = progressTracker;
     }
 
     @PostMapping("/collect/{connId}")
-    public Map<String, Object> collect(@PathVariable Long connId) throws Exception {
-        var result = collectService.collect(connId);
+    public Map<String, Object> collect(@PathVariable Long connId,
+                                       @RequestBody(required = false) Map<String, String> body) throws Exception {
+        String progressId = null;
+        if (body != null && body.get("progressId") != null && !body.get("progressId").isBlank()) {
+            progressId = body.get("progressId");
+            progressTracker.register(progressId, "连接数据库");
+        }
+        var result = collectService.collect(connId, progressId);
         return Map.of(
             "success", true,
             "tableCount", result.tableCount,
@@ -73,10 +86,25 @@ public class MetadataController {
     }
 
     @GetMapping("/{connId}/tables")
-    public List<Map<String, Object>> tables(@PathVariable Long connId) {
-        List<MetaTable> tables = tableRepo.findByConnectionIdOrderByTableNameAsc(connId);
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (MetaTable t : tables) {
+    public Map<String, Object> tables(@PathVariable Long connId,
+                                      @RequestParam(defaultValue = "1") int page,
+                                      @RequestParam(defaultValue = "20") int size,
+                                      @RequestParam(required = false) String search) {
+        List<MetaTable> all = tableRepo.findByConnectionIdOrderByTableNameAsc(connId);
+        String kw = search == null ? "" : search.trim().toLowerCase();
+        List<MetaTable> filtered = kw.isEmpty() ? all
+            : all.stream().filter(t -> t.getTableName().toLowerCase().contains(kw)).toList();
+        int total = filtered.size();
+        int pageSize = Math.max(1, Math.min(size, 200));
+        int totalPages = Math.max(1, (total + pageSize - 1) / pageSize);
+        int pageNo = Math.min(Math.max(1, page), totalPages);
+        List<MetaTable> pageItems = filtered.stream()
+            .skip((long) (pageNo - 1) * pageSize)
+            .limit(pageSize)
+            .toList();
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (MetaTable t : pageItems) {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", t.getId());
             m.put("tableName", t.getTableName());
@@ -88,8 +116,14 @@ public class MetadataController {
             m.put("constraintCount", constraintRepo.findByTableId(t.getId()).size());
             m.put("indexCount", indexRepo.findByTableId(t.getId()).size());
             m.put("partitionCount", partitionRepo.findByTableIdOrderByOrdinalAsc(t.getId()).size());
-            result.add(m);
+            items.add(m);
         }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("items", items);
+        result.put("total", total);
+        result.put("page", pageNo);
+        result.put("pageSize", pageSize);
+        result.put("totalPages", totalPages);
         return result;
     }
 
@@ -189,5 +223,41 @@ public class MetadataController {
         for (TableMeta t : snap.tables()) tableNames.add(t.name());
         m.put("tables", tableNames);
         return m;
+    }
+
+    /* ===== 历史快照查询 ===== */
+
+    /** 快照列表（最新在前，is_current 标记当前版本） */
+    @GetMapping("/{connId}/snapshots")
+    public List<Map<String, Object>> snapshots(@PathVariable Long connId) {
+        return historyService.listSnapshots(connId);
+    }
+
+    /** 表历史链：不传 columnName 返回表级版本；传 columnName 返回该字段的逐快照定义 */
+    @GetMapping("/{connId}/tables/{tableName}/history")
+    public List<Map<String, Object>> tableHistory(@PathVariable Long connId,
+                                                  @PathVariable String tableName,
+                                                  @RequestParam(required = false) String columnName) {
+        if (columnName != null && !columnName.isBlank()) {
+            return historyService.columnHistory(connId, tableName, columnName.trim());
+        }
+        return historyService.tableHistory(connId, tableName);
+    }
+
+    /** 某快照下某表的完整明细 */
+    @GetMapping("/{connId}/snapshots/{snapshotId}/tables/{tableName}")
+    public Map<String, Object> snapshotTable(@PathVariable Long connId,
+                                             @PathVariable long snapshotId,
+                                             @PathVariable String tableName) {
+        return historyService.snapshotTableDetail(connId, snapshotId, tableName);
+    }
+
+    /** 两个快照间的表结构差异 */
+    @GetMapping("/{connId}/history-diff")
+    public Map<String, Object> historyDiff(@PathVariable Long connId,
+                                           @RequestParam long oldSnapshotId,
+                                           @RequestParam long newSnapshotId,
+                                           @RequestParam String tableName) {
+        return historyService.diffSnapshots(connId, oldSnapshotId, newSnapshotId, tableName);
     }
 }

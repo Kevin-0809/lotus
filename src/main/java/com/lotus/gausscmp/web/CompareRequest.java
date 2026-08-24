@@ -7,6 +7,8 @@ public record CompareRequest(
     Long targetConnectionId,
     Integer parallelism, Integer chunkSize, Boolean drillDown,
     String checksumFunction, String syncDirection, Integer maxDisplayRows,
+    Long tableTimeoutSeconds,
     List<String> includeTables, List<String> excludeTables,
-    List<String> dataCompareTables, Boolean generateDdl, Boolean generateDml
+    List<String> dataCompareTables, Boolean generateDdl, Boolean generateDml,
+    String progressId
 ) {}

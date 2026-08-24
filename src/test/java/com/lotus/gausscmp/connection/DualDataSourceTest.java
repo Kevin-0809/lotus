@@ -14,8 +14,8 @@ class DualDataSourceTest {
         try (var ds = new DualDataSource(src, tgt, 2)) {
             HikariDataSource s = ds.source();
             HikariDataSource t = ds.target();
-            assertThat(s.getMaximumPoolSize()).isEqualTo(3);
-            assertThat(t.getMaximumPoolSize()).isEqualTo(3);
+            assertThat(s.getMaximumPoolSize()).isEqualTo(2);
+            assertThat(t.getMaximumPoolSize()).isEqualTo(2);
             assertThat(s.isReadOnly()).isTrue();
             assertThat(t.isReadOnly()).isTrue();
             assertThat(s.getJdbcUrl()).contains("h1", "5432", "d1");

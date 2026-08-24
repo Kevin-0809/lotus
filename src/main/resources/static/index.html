@@ -25,7 +25,10 @@
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
-.container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+.container { width: calc(100% - 32px); max-width: 1360px; margin: 0 auto; padding: 24px 0; }
+@media (max-width: 720px) {
+  .container { width: calc(100% - 24px); padding: 16px 0; }
+}
 
 /* Header */
 .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
@@ -194,6 +197,114 @@ pre.sql-script { background: #1e293b; color: #e2e8f0; padding: 16px; border-radi
 .checkbox-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--text); font-weight: 400; }
 .checkbox-group input[type=checkbox] { accent-color: var(--primary); }
 </style>
+<style>
+/* ===== Ant Design v5 简约风覆盖层（紧凑型）===== */
+:root {
+  --bg: #f5f5f5;
+  --bg-subtle: #fafafa;
+  --bg-hover: #fafafa;
+  --card: #ffffff;
+  --border: #f0f0f0;
+  --border-light: #f5f5f5;
+  --border-strong: #d9d9d9;
+  --primary: #1677ff;
+  --primary-bg: #e6f4ff;
+  --text: rgba(0,0,0,.88);
+  --text-2: rgba(0,0,0,.65);
+  --text-3: rgba(0,0,0,.45);
+  --green: #52c41a;
+  --green-bg: #f6ffed;
+  --red: #ff4d4f;
+  --red-bg: #fff2f0;
+  --gray-bg: #f5f5f5;
+  --radius: 8px;
+  --radius-sm: 6px;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5714; }
+.container { width: calc(100% - 32px); max-width: 1360px; margin: 0 auto; padding: 0 0 48px; }
+.header { display: flex; align-items: center; justify-content: space-between; height: 56px; border-bottom: 1px solid var(--border); margin: 0 0 20px; padding: 0; position: sticky; top: 0; background: rgba(255,255,255,.98); backdrop-filter: blur(8px); z-index: 100; }
+@media (max-width: 720px) {
+  .container { width: calc(100% - 24px); padding-bottom: 32px; }
+  .header { margin-bottom: 16px; }
+}
+.header h1 { font-size: 15px; font-weight: 600; }
+.header .logo-icon { width: 28px; height: 28px; border-radius: var(--radius-sm); background: linear-gradient(135deg,#1677ff,#0958d9); font-size: 14px; box-shadow: 0 2px 6px rgba(22,119,255,.35); }
+.navbar { display: flex; gap: 4px; background: transparent; border: none; padding: 0; margin-bottom: 0; }
+.nav-item { padding: 6px 14px; border-radius: var(--radius-sm); font-size: 14px; color: var(--text-2); }
+.nav-item.active { background: var(--primary-bg); color: var(--primary); font-weight: 600; }
+.nav-item:hover:not(.active) { background: transparent; color: var(--primary-hover, #4096ff); }
+.card { padding: 20px 24px; box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 1px 6px -1px rgba(0,0,0,.02), 0 2px 4px rgba(0,0,0,.02); }
+.card-title { font-size: 15px; }
+.form-group input, .form-group select { height: 32px; padding: 4px 11px; border-color: var(--border-strong); font-size: 14px; }
+.form-group input:focus, .form-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(5,145,255,.1); }
+.form-group input:hover, .form-group select:hover { border-color: #4096ff; }
+.form-group input[readonly] { background: var(--bg-subtle); color: var(--text-3); }
+.btn { height: 32px; padding: 0 15px; border-color: var(--border-strong); font-size: 14px; font-weight: 400; line-height: 1; box-shadow: 0 2px 0 rgba(0,0,0,.02); }
+.btn:hover { border-color: #4096ff; color: #4096ff; }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 2px 0 rgba(5,145,255,.1); }
+.btn-primary:hover { background: #4096ff; border-color: #4096ff; color: #fff; }
+.btn-primary:disabled { background: #91caff; border-color: #91caff; }
+.btn-danger:hover { background: #fff1f0; border-color: #ff7875; color: #ff7875; }
+.btn-success { background: var(--green); border-color: var(--green); }
+.btn-success:hover { background: #73d13d; border-color: #73d13d; color: #fff; }
+.btn-sm { height: 26px; padding: 0 10px; font-size: 13px; }
+.msg { padding: 8px 14px; border-radius: var(--radius-sm); font-size: 13.5px; border-width: 1px; }
+.msg.ok { background: var(--green-bg); border-color: #b7eb6f; color: #389e0d; }
+.msg.err { background: var(--red-bg); border-color: #ffccc7; color: #cf1322; }
+.summary-grid { display: flex; gap: 48px; padding: 18px 0; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
+.summary-box { background: transparent; border: none; text-align: left; padding: 0; }
+.summary-box .value { font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tabs { gap: 24px; border-bottom: 1px solid var(--border); }
+.tab { font-size: 14px; }
+.tab.active { font-weight: 600; }
+.sub-tab.active { background: var(--primary-bg); color: var(--primary); border-color: #91caff; font-weight: 600; }
+th { height: 36px; padding: 0 12px; color: var(--text); font-size: 13px; background: var(--bg-subtle); border-bottom: 1px solid var(--border-strong); }
+td { height: 38px; padding: 0 12px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.badge { padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 400; line-height: 22px; border: 1px solid transparent; }
+.badge.consistent, .badge.success { background: var(--green-bg); color: #389e0d; border-color: #b7eb6f; }
+.badge.different, .badge.failed { background: var(--red-bg); color: #cf1322; border-color: #ffccc7; }
+.badge.info { background: var(--primary-bg); color: #0958d9; border-color: #91caff; }
+.badge.skipped { background: var(--gray-bg); color: var(--text-2); border-color: var(--border-strong); }
+.meta-badge { padding: 0 8px; border-radius: 4px; line-height: 22px; font-size: 12px; }
+.meta-badge.warn { background: #fffbe6; color: #d48806; border: 1px solid #ffe58f; }
+.meta-badge.ok { background: var(--green-bg); color: #389e0d; border: 1px solid #b7eb6f; }
+pre.sql-script, .json-view { background: var(--bg-subtle); color: var(--text); border: 1px solid var(--border); font-size: 12.5px; }
+.script-wrap .copy-btn { background: var(--card); border-color: var(--border-strong); color: var(--text-2); }
+.script-wrap .copy-btn:hover { border-color: #4096ff; color: #4096ff; background: var(--card); }
+.modal-overlay { background: rgba(0,0,0,.45); backdrop-filter: none; }
+.modal { border: none; box-shadow: 0 6px 16px rgba(0,0,0,.08), 0 3px 6px -4px rgba(0,0,0,.12), 0 9px 28px 8px rgba(0,0,0,.05); }
+.empty-hint { font-size: 13px; }
+/* 进度浮条 */
+.progress-float { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); z-index: 900; width: 420px; max-width: calc(100vw - 48px); }
+.progress-float-inner { background: rgba(255,255,255,.98); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; box-shadow: 0 6px 16px rgba(0,0,0,.08), 0 3px 6px -4px rgba(0,0,0,.12), 0 9px 28px 8px rgba(0,0,0,.05); }
+.progress-meta { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--text-2); margin-bottom: 8px; gap: 12px; }
+.progress-bar { height: 6px; background: var(--gray-bg); border-radius: 999px; overflow: hidden; }
+.progress-fill { height: 100%; width: 0%; background: var(--primary); border-radius: 999px; transition: width .4s cubic-bezier(.22,.68,.36,1); }
+.progress-eta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); margin-top: 8px; }
+/* ===== 顶部 + 左右版面 ===== */
+.header { margin: 0 0 16px; padding: 0; }
+.header .logo { gap: 10px; }
+.header-sub { font-size: 12px; color: var(--text-3); }
+.layout { display: flex; gap: 16px; align-items: flex-start; }
+.sidebar { width: 168px; flex-shrink: 0; position: sticky; top: 72px; display: flex; flex-direction: column; gap: 2px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 1px 6px -1px rgba(0,0,0,.02), 0 2px 4px rgba(0,0,0,.02); }
+.sidebar .nav-item { width: 100%; text-align: left; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 14px; color: var(--text-2); }
+.sidebar .nav-item:hover:not(.active) { background: var(--bg-hover); color: var(--text); }
+.sidebar .nav-item.active { background: var(--primary-bg); color: var(--primary); font-weight: 600; }
+.main { flex: 1; min-width: 0; }
+@media (max-width: 900px) {
+  .layout { flex-direction: column; }
+  .sidebar { position: static; width: 100%; flex-direction: row; flex-wrap: wrap; }
+  .sidebar .nav-item { width: auto; }
+}
+@media (max-width: 720px) {
+  .connection-pair { grid-template-columns: 1fr; gap: 10px; }
+  .arrow { padding-top: 0; transform: rotate(90deg); }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-row { flex-wrap: wrap; }
+  .form-row .form-group { min-width: min(100%, 220px); }
+}
+</style>
+<link rel="stylesheet" href="/app.css">
 </head>
 <body>
 <div class="container">
@@ -202,13 +313,20 @@ pre.sql-script { background: #1e293b; color: #e2e8f0; padding: 16px; border-radi
     <div class="logo-icon">G</div>
     <h1>GaussDB Schema 比对平台</h1>
   </div>
+  <span class="header-sub">openGauss 元数据比对 · 定时巡检 · 历史追踪</span>
 </div>
 
-<div class="navbar">
+<div class="layout">
+<div class="sidebar">
   <div class="nav-item active" onclick="switchView('compare',this)">比对</div>
   <div class="nav-item" onclick="switchView('connections',this)">数据源管理</div>
+  <div class="nav-item" onclick="switchView('metaHistory',this)">元数据历史</div>
+  <div class="nav-item" onclick="switchView('schedule',this)">定时比对</div>
+  <div class="nav-item" onclick="switchView('tableConfig',this)">表配置</div>
+  <div class="nav-item" onclick="switchView('jasypt',this)">密文工具</div>
   <div class="nav-item" onclick="switchView('history',this)">比对历史</div>
 </div>
+<div class="main">
 
 <!-- ===== 比对视图 ===== -->
 <div class="view show" id="view-compare">
@@ -239,6 +357,7 @@ pre.sql-script { background: #1e293b; color: #e2e8f0; padding: 16px; border-radi
         <div class="form-group"><label>并发数</label><input id="parallelism" type="number" value="1" min="1" style="width:80px"></div>
         <div class="form-group"><label>块大小</label><input id="chunkSize" type="number" value="5000" min="1" style="width:100px"></div>
         <div class="form-group"><label>最大显示行数</label><input id="maxDisplayRows" type="number" value="1000" min="1" style="width:100px"></div>
+        <div class="form-group"><label>表超时(秒,0=不限)</label><input id="tableTimeoutSeconds" type="number" value="0" min="0" style="width:110px"></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>校验函数</label><select id="checksumFunction"><option value="md5">MD5</option><option value="sha256">SHA256</option></select></div>
@@ -247,10 +366,10 @@ pre.sql-script { background: #1e293b; color: #e2e8f0; padding: 16px; border-radi
       </div>
       <div class="form-group"><label>包含表 (正则,逗号分隔)</label><input id="includeTables" placeholder="留空=全部"></div>
       <div class="form-group"><label>排除表 (正则,逗号分隔)</label><input id="excludeTables" placeholder="留空=不排除"></div>
-      <div class="form-group" style="grid-column:1/-1"><label>数据比对表 (正则前缀,逗号分隔)</label><input id="dataCompareTables" placeholder="留空=不比对数据"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>数据比对表（由“表配置”中的参数表清单决定）</label><input id="dataCompareTables" placeholder="未配置参数表时可临时填写正则" ></div>
       <div class="checkbox-group" style="grid-column:1/-1;margin-bottom:10px">
         <label><input type="checkbox" id="generateDdl" checked> 生成 DDL 同步脚本</label>
-        <label><input type="checkbox" id="generateDml" checked> 生成 DML 同步脚本</label>
+        <span style="color:var(--text-3);font-size:12px">数据比对仅统计源端与目标端记录数，不读取明细，也不生成 DML</span>
       </div>
     </div>
     <div class="compare-type-btns">
@@ -272,21 +391,20 @@ pre.sql-script { background: #1e293b; color: #e2e8f0; padding: 16px; border-radi
         <div class="tab" data-target="tabJson" onclick="switchTab(this)">原始JSON</div>
       </div>
       <div class="tab-panel active" id="tabStructure">
-        <div class="status-filter"><label><input type="checkbox" id="fDiff" checked> 差异</label><label><input type="checkbox" id="fConsistent"> 一致</label><label><input type="checkbox" id="fMissing"> 源缺失</label><label><input type="checkbox" id="fExtra"> 目标多余</label></div>
+        <div class="status-filter"><label><input type="checkbox" id="fDiff" checked onchange="renderStructure()"> 差异</label><label><input type="checkbox" id="fConsistent" onchange="renderStructure()"> 一致</label><label><input type="checkbox" id="fMissing" onchange="renderStructure()"> 源缺失</label><label><input type="checkbox" id="fExtra" onchange="renderStructure()"> 目标多余</label></div>
         <div class="table-search"><input id="structSearch" placeholder="搜索表名..." oninput="renderStructure()"></div>
         <div class="diff-categories" id="diffCategories"></div>
         <table id="structTable"></table>
       </div>
       <div class="tab-panel" id="tabData">
-        <div class="status-filter"><label><input type="checkbox" id="dDiff" checked> 差异</label><label><input type="checkbox" id="dConsistent"> 一致</label><label><input type="checkbox" id="dSkipped" checked> 跳过</label></div>
+        <div class="status-filter"><label><input type="checkbox" id="dDiff" checked onchange="renderData()"> 差异</label><label><input type="checkbox" id="dConsistent" onchange="renderData()"> 一致</label><label><input type="checkbox" id="dSkipped" onchange="renderData()"> 跳过</label></div>
         <div class="table-search"><input id="dataSearch" placeholder="搜索表名..." oninput="renderData()"></div>
         <table id="dataTable"></table>
       </div>
       <div class="tab-panel" id="tabSeq"><table id="seqTable"></table></div>
       <div class="tab-panel" id="tabScript">
-        <div class="sub-tabs"><div class="sub-tab active" onclick="switchScript(this,'ddl')">DDL</div><div class="sub-tab" onclick="switchScript(this,'dml')">DML</div></div>
+        <div class="sub-tabs"><div class="sub-tab active" onclick="switchScript(this,'ddl')">DDL</div></div>
         <div class="script-wrap" id="ddlWrap"><button class="copy-btn" onclick="copyScript(this)">复制</button><pre class="sql-script" id="ddlScript"></pre></div>
-        <div class="script-wrap" id="dmlWrap" style="display:none"><button class="copy-btn" onclick="copyScript(this)">复制</button><pre class="sql-script" id="dmlScript"></pre></div>
       </div>
       <div class="tab-panel" id="tabJson"><div class="json-view" id="jsonView"></div></div>
     </div>
@@ -304,7 +422,7 @@ pre.sql-script { background: #1e293b; color: #e2e8f0; padding: 16px; border-radi
     <div class="card">
       <div class="section-header"><h2>元数据浏览 - <span id="metaBrowserTitle"></span></h2><button class="btn" onclick="document.getElementById('metaBrowser').classList.remove('show')">关闭</button></div>
       <div class="sub-tabs"><div class="sub-tab active" onclick="switchMetaTab(this,'tables')">表</div><div class="sub-tab" onclick="switchMetaTab(this,'sequences')">序列</div></div>
-      <div id="metaTables"><table><thead><tr><th>表名</th><th>注释</th><th>分区</th><th>列数</th><th>约束数</th><th>索引数</th><th>分区数</th><th>操作</th></tr></thead><tbody id="metaTableBody"></tbody></table></div>
+      <div id="metaTables"><div class="table-search" style="display:flex;gap:8px;align-items:center"><input id="metaTableSearch" placeholder="搜索表名..." oninput="metaTableSearchDebounce()"><button class="btn btn-sm" onclick="metaTablePage=1;loadMetaTables(currentMetaConnId,1)">搜索</button></div><table><thead><tr><th>表名</th><th>注释</th><th>分区</th><th>列数</th><th>约束数</th><th>索引数</th><th>分区数</th><th>操作</th></tr></thead><tbody id="metaTableBody"></tbody></table><div class="pager" id="metaTablePager"></div></div>
       <div id="metaSequences" style="display:none"><table><thead><tr><th>序列名</th><th>类型</th><th>起始值</th><th>步长</th><th>最小值</th><th>最大值</th><th>缓存</th><th>循环</th></tr></thead><tbody id="metaSeqBody"></tbody></table></div>
     </div>
     <div class="view" id="metaTableDetail">
@@ -313,6 +431,76 @@ pre.sql-script { background: #1e293b; color: #e2e8f0; padding: 16px; border-radi
         <div id="metaTableDetailContent"></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ===== 元数据历史 ===== -->
+<div class="view" id="view-metaHistory">
+  <div class="card">
+    <div class="card-title">元数据历史查询</div>
+    <div class="msg" id="metaHistoryMsg"></div>
+    <div class="form-row" style="margin-bottom:14px">
+      <div class="form-group"><label>数据源</label><select id="histConnId" onchange="onHistConnChange()"><option value="">-- 请选择 --</option></select></div>
+      <div class="form-group"><label>表名</label><input id="histTableInput" placeholder="输入要追踪的表名"></div>
+      <div class="form-group"><label>字段名（可选，追踪字段级历史）</label><input id="histColumnInput" placeholder="留空=查询表级历史"></div>
+    </div>
+    <div class="form-row" style="margin-bottom:6px">
+      <button class="btn btn-primary" onclick="queryMetaHistory()">查询历史</button>
+      <button class="btn" onclick="loadHistSnapshotsOnly()">刷新快照列表</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">采集快照</div>
+    <table><thead><tr><th>快照ID</th><th>采集时间</th><th>表数量</th><th>序列数量</th><th>采集耗时</th><th>版本</th></tr></thead><tbody id="histSnapshotBody"><tr><td colspan="6" class="empty-hint">请选择数据源</td></tr></tbody></table>
+  </div>
+  <div class="view" id="metaHistoryResult">
+    <div class="card">
+      <div class="section-header"><h2 id="metaHistoryResultTitle">历史版本</h2></div>
+      <div id="metaHistoryResultContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 定时比对 ===== -->
+<div class="view" id="view-schedule">
+  <div class="card">
+    <div class="section-header"><h2>每日比对任务</h2><button class="btn btn-primary" onclick="openScheduleModal()">+ 新增任务</button></div>
+    <div class="msg" id="scheduleMsg"></div>
+    <p style="color:var(--text-3);font-size:12px;margin-bottom:12px">任务在每日指定时间自动执行：先采集两端元数据，再执行比对，最后邮件通知维护人员；各阶段耗时可在此查看</p>
+    <div id="mailStatusBox" style="margin-bottom:12px"></div>
+    <table><thead><tr><th>ID</th><th>任务名</th><th>源→目标</th><th>类型</th><th>执行时间</th><th>通知邮箱</th><th>上次执行</th><th>状态</th><th>操作</th></tr></thead><tbody id="scheduleTableBody"></tbody></table>
+  </div>
+  <div class="view" id="scheduleRuns">
+    <div class="card">
+      <div class="section-header"><h2>执行记录 - <span id="scheduleRunsTitle"></span></h2><button class="btn" onclick="document.getElementById('scheduleRuns').classList.remove('show')">关闭</button></div>
+      <table><thead><tr><th>开始时间</th><th>状态</th><th>源采集</th><th>目标采集</th><th>比对</th><th>通知</th><th>总耗时</th><th>结构(一致/差异)</th><th>错误</th></tr></thead><tbody id="scheduleRunsBody"></tbody></table>
+      <div class="pager" id="scheduleRunsPager"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 表配置 ===== -->
+<div class="view" id="view-tableConfig">
+  <div class="card">
+    <div class="section-header"><h2>表配置</h2><button class="btn btn-primary" onclick="openTableConfigModal()">+ 新增表</button></div>
+    <p class="config-hint">参数表参与结构和数据比对；排除表优先级更高。表名按数据库实际名称精确匹配。</p>
+    <div class="msg" id="tableConfigMsg"></div>
+    <div class="sub-tabs"><div class="sub-tab active" data-config-type="PARAMETER" onclick="switchConfigType(this,'PARAMETER')">参数表清单</div><div class="sub-tab" data-config-type="EXCLUDE" onclick="switchConfigType(this,'EXCLUDE')">排除表清单</div></div>
+    <div class="table-search"><input id="tableConfigSearch" placeholder="搜索精确表名..." oninput="renderTableConfigs()"></div>
+    <table><thead><tr><th>表名</th><th>状态</th><th>备注</th><th>更新时间</th><th>操作</th></tr></thead><tbody id="tableConfigBody"></tbody></table>
+  </div>
+</div>
+
+<!-- ===== Jasypt 密文工具 ===== -->
+<div class="view" id="view-jasypt">
+  <div class="card jasypt-tool">
+    <div class="card-title">Jasypt 密文计算</div>
+    <p class="config-hint">输入主密钥和数据库密码明文，后端按 PBEWithMD5AndDES 生成可用于 <code>ENC(...)</code> 的密文。输入不会保存或写入日志。</p>
+    <div class="msg" id="jasyptMsg"></div>
+    <div class="form-group"><label for="jasyptKey">Jasypt 主密钥</label><input id="jasyptKey" type="password" autocomplete="new-password" placeholder="请输入部署时的 JASYPT_ENCRYPTOR_PASSWORD"></div>
+    <div class="form-group"><label for="jasyptPlaintext">密码明文</label><input id="jasyptPlaintext" type="password" autocomplete="new-password" placeholder="请输入数据库密码"></div>
+    <div class="form-row"><button class="btn btn-primary" onclick="calculateJasypt()">计算密文</button><button class="btn" onclick="clearJasypt()">清空</button></div>
+    <div class="form-group jasypt-result"><label for="jasyptCiphertext">加密结果</label><div class="input-with-action"><input id="jasyptCiphertext" readonly placeholder="计算后显示 ENC(...) 密文"><button class="btn btn-sm" onclick="copyJasypt()">复制</button></div></div>
   </div>
 </div>
 
@@ -336,6 +524,37 @@ pre.sql-script { background: #1e293b; color: #e2e8f0; padding: 16px; border-radi
     </div>
   </div>
 </div>
+</div><!-- /.main -->
+</div><!-- /.layout -->
+
+<!-- ===== 定时任务编辑弹窗 ===== -->
+<div class="modal-overlay" id="scheduleModal"><div class="modal">
+  <h2 id="scheduleModalTitle">新增定时比对任务</h2>
+  <input type="hidden" id="schedId">
+  <div class="form-group"><label>任务名称</label><input id="schedName" placeholder="如: 每日生产-灾备结构比对"></div>
+  <div class="form-row">
+    <div class="form-group"><label>源数据源</label><select id="schedSource"></select></div>
+    <div class="form-group"><label>目标数据源</label><select id="schedTarget"></select></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>每日执行时间</label><input id="schedTime" type="time" value="08:00"></div>
+    <div class="form-group"><label>比对类型</label><select id="schedType"><option value="STRUCTURE">结构比对</option><option value="BOTH">结构+数据</option></select></div>
+  </div>
+  <div class="form-group"><label>包含表（正则,逗号分隔,留空=全部）</label><input id="schedInclude"></div>
+  <div class="form-group"><label>排除表（正则,逗号分隔）</label><input id="schedExclude"></div>
+  <div class="form-group"><label>通知邮箱（逗号分隔）</label><input id="schedEmails" placeholder="dba1@corp.com,dba2@corp.com"></div>
+  <div class="checkbox-group"><label><input type="checkbox" id="schedEnabled" checked> 启用</label></div>
+  <div class="modal-actions"><button class="btn" onclick="closeScheduleModal()">取消</button><button class="btn btn-primary" onclick="saveSchedule()">保存</button></div>
+</div></div>
+
+<!-- ===== 全局进度浮条 ===== -->
+<div class="progress-float" id="progressWrap" style="display:none">
+  <div class="progress-float-inner">
+    <div class="progress-meta"><span id="progressPhase">准备中</span><span id="progressCount"></span><span id="progressPercent">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-eta"><span id="progressElapsed"></span><span id="progressEta"></span></div>
+  </div>
+</div>
 
 <!-- ===== 数据源编辑弹窗 ===== -->
 <div class="modal-overlay" id="connModal"><div class="modal">
@@ -350,17 +569,76 @@ pre.sql-script { background: #1e293b; color: #e2e8f0; padding: 16px; border-radi
   <div class="modal-actions"><button class="btn" onclick="testConn()">测试连接</button><button class="btn" onclick="closeConnModal()">取消</button><button class="btn btn-primary" onclick="saveConn()">保存</button></div>
 </div></div>
 
+<!-- ===== 表配置编辑弹窗 ===== -->
+<div class="modal-overlay" id="tableConfigModal"><div class="modal">
+  <h2 id="tableConfigModalTitle">新增表配置</h2>
+  <input type="hidden" id="tableConfigId">
+  <div class="form-group"><label>精确表名</label><input id="tableConfigName" placeholder="例如：sys_parameter"></div>
+  <div class="form-group"><label>配置类型</label><select id="tableConfigType"><option value="PARAMETER">参数表</option><option value="EXCLUDE">排除表</option></select></div>
+  <div class="form-group"><label>备注</label><input id="tableConfigRemark" placeholder="可选"></div>
+  <div class="checkbox-group"><label><input type="checkbox" id="tableConfigEnabled" checked> 启用</label></div>
+  <div class="modal-actions"><button class="btn" onclick="closeTableConfigModal()">取消</button><button class="btn btn-primary" onclick="saveTableConfig()">保存</button></div>
+</div></div>
+
 </div>
 <script>
-let connections=[],compareResult=null,historyPage=1,currentMetaConnId=null;
+let connections=[],compareResult=null,historyPage=1,currentMetaConnId=null,metaTablePage=1,metaSearchTimer=null,tableConfigs=[],tableConfigType='PARAMETER';
 
-function switchView(n,el){document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));document.getElementById('view-'+n).classList.add('show');document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));el.classList.add('active');if(n==='connections')loadConnections();if(n==='history')loadHistory(1);}
+/* ===== 进度轮询 ===== */
+let progressTimer=null;
+function startProgressPolling(){
+  const wrap=document.getElementById('progressWrap');
+  if(!wrap)return;
+  wrap.style.display='block';
+  stopProgressPolling();
+  progressTimer=setInterval(async()=>{
+    const id=wrap.dataset.progressId;
+    if(!id)return;
+    try{
+      const p=await api('/api/progress/'+id);
+      document.getElementById('progressPhase').textContent=phaseLabel(p.phase);
+      document.getElementById('progressCount').textContent=p.total>0?(p.completed+' / '+p.total):'';
+      document.getElementById('progressPercent').textContent=p.percent+'%';
+      document.getElementById('progressFill').style.width=p.percent+'%';
+      const elapsed=Math.max(0,Date.now()-p.startedAt);
+      document.getElementById('progressElapsed').textContent='已用 '+fmtDur(elapsed);
+      const eta=document.getElementById('progressEta');
+      if(p.total>0&&p.completed>0&&!p.done){eta.textContent='预计还需 '+fmtDur(elapsed/p.completed*(p.total-p.completed));}
+      else if(p.done){eta.textContent='完成';}
+      else{eta.textContent='';}
+      if(p.done)stopProgressPolling();
+    }catch(e){/* 进度查询失败不中断主流程 */}
+  },500);
+}
+function stopProgressPolling(){if(progressTimer){clearInterval(progressTimer);progressTimer=null;}}
+function newProgressId(){return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
+function phaseLabel(p){return {'连接数据库':'连接数据库','读取表清单':'读取表清单','并发采集表元数据':'并发采集表元数据','批量读取表元数据':'批量读取表元数据','备份历史元数据':'备份历史元数据','写入新元数据':'写入新元数据','读取序列元数据':'读取序列元数据','保存元数据':'保存元数据','准备比对':'准备比对','结构比对':'结构比对','并发数据比对':'并发数据比对','汇总比对结果':'汇总比对结果'}[p]||p;}
+function fmtDur(ms){const s=Math.round(ms/1000);if(s<60)return s+'s';const m=Math.floor(s/60);return m+'m'+(s%60)+'s';}
+function metaTableSearchDebounce(){if(metaSearchTimer)clearTimeout(metaSearchTimer);metaSearchTimer=setTimeout(()=>{metaTablePage=1;loadMetaTables(currentMetaConnId,1);},400);}
+
+function switchView(n,el){document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));document.getElementById('view-'+n).classList.add('show');document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));el.classList.add('active');if(n==='connections')loadConnections();if(n==='tableConfig')loadTableConfigs();if(n==='history')loadHistory(1);if(n==='metaHistory'){if(!connections.length)loadConnections().then(renderHistConnDropdown);else renderHistConnDropdown();loadHistSnapshotsOnly();}if(n==='schedule'){if(!connections.length)loadConnections().then(renderSchedConnDropdowns);else renderSchedConnDropdowns();loadSchedules();}}
 function parseList(v){if(!v||!v.trim())return[];return v.split(',').map(s=>s.trim()).filter(s=>s);}
 async function api(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error(await r.text());return r.json();}
 function showMsg(id,msg,ok){const el=document.getElementById(id);el.textContent=msg;el.className='msg '+(ok?'ok':'err')+' show';setTimeout(()=>el.classList.remove('show'),4000);}
 async function copyScript(btn){const pre=btn.parentElement.querySelector('pre');if(!pre)return;try{await navigator.clipboard.writeText(pre.textContent||'');btn.classList.add('copied');const t=btn.textContent;btn.textContent='已复制';setTimeout(()=>{btn.classList.remove('copied');btn.textContent=t;},1500);}catch(e){const ta=document.createElement('textarea');ta.value=pre.textContent||'';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.classList.add('copied');const t=btn.textContent;btn.textContent='已复制';setTimeout(()=>{btn.classList.remove('copied');btn.textContent=t;},1500);}}
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function fmtTime(s){if(!s)return'-';try{return new Date(s).toLocaleString('zh-CN');}catch(e){return s;}}
+
+/* 表配置 */
+async function loadTableConfigs(){try{tableConfigs=await api('/api/table-configs');renderTableConfigs();}catch(e){showMsg('tableConfigMsg','加载失败:'+e.message,false);}}
+function switchConfigType(el,type){tableConfigType=type;document.querySelectorAll('#view-tableConfig .sub-tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderTableConfigs();}
+function renderTableConfigs(){const q=(document.getElementById('tableConfigSearch')?.value||'').toLowerCase();const rows=tableConfigs.filter(x=>x.tableType===tableConfigType&&(!q||x.tableName.toLowerCase().includes(q)));const body=document.getElementById('tableConfigBody');if(!body)return;body.innerHTML=rows.length?rows.map(x=>`<tr><td><b>${esc(x.tableName)}</b></td><td><span class="badge ${x.enabled?'success':'skipped'}">${x.enabled?'启用':'停用'}</span></td><td>${esc(x.remark||'-')}</td><td>${fmtTime(x.updatedAt)}</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="editTableConfig(${x.id})">编辑</button> <button class="btn btn-sm" onclick="toggleTableConfig(${x.id})">${x.enabled?'停用':'启用'}</button> <button class="btn btn-danger btn-sm" onclick="deleteTableConfig(${x.id})">删除</button></td></tr>`).join(''):'<tr><td colspan="5" class="empty-hint">暂无配置</td></tr>';}
+function openTableConfigModal(){document.getElementById('tableConfigModalTitle').textContent='新增表配置';document.getElementById('tableConfigId').value='';document.getElementById('tableConfigName').value='';document.getElementById('tableConfigType').value=tableConfigType;document.getElementById('tableConfigRemark').value='';document.getElementById('tableConfigEnabled').checked=true;document.getElementById('tableConfigModal').classList.add('show');}
+function closeTableConfigModal(){document.getElementById('tableConfigModal').classList.remove('show');}
+function editTableConfig(id){const x=tableConfigs.find(v=>v.id===id);if(!x)return;document.getElementById('tableConfigModalTitle').textContent='编辑表配置';document.getElementById('tableConfigId').value=x.id;document.getElementById('tableConfigName').value=x.tableName;document.getElementById('tableConfigType').value=x.tableType;document.getElementById('tableConfigRemark').value=x.remark||'';document.getElementById('tableConfigEnabled').checked=x.enabled;document.getElementById('tableConfigModal').classList.add('show');}
+async function saveTableConfig(){const id=document.getElementById('tableConfigId').value;const body={tableName:document.getElementById('tableConfigName').value.trim(),tableType:document.getElementById('tableConfigType').value,remark:document.getElementById('tableConfigRemark').value.trim(),enabled:document.getElementById('tableConfigEnabled').checked};if(!body.tableName){showMsg('tableConfigMsg','请输入精确表名',false);return;}try{await api(id?'/api/table-configs/'+id:'/api/table-configs',{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});closeTableConfigModal();await loadTableConfigs();showMsg('tableConfigMsg','保存成功',true);}catch(e){showMsg('tableConfigMsg','保存失败:'+e.message,false);}}
+async function toggleTableConfig(id){try{await api('/api/table-configs/'+id+'/toggle',{method:'POST'});await loadTableConfigs();}catch(e){showMsg('tableConfigMsg','操作失败:'+e.message,false);}}
+async function deleteTableConfig(id){if(!confirm('确认删除该表配置?'))return;try{await api('/api/table-configs/'+id,{method:'DELETE'});await loadTableConfigs();showMsg('tableConfigMsg','删除成功',true);}catch(e){showMsg('tableConfigMsg','删除失败:'+e.message,false);}}
+
+/* Jasypt 密文工具 */
+async function calculateJasypt(){const key=document.getElementById('jasyptKey').value;const plaintext=document.getElementById('jasyptPlaintext').value;if(!key||!plaintext){showMsg('jasyptMsg','请输入主密钥和密码明文',false);return;}try{const r=await api('/api/jasypt/encrypt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,plaintext})});document.getElementById('jasyptCiphertext').value=r.ciphertext;showMsg('jasyptMsg','密文计算成功。请将主密钥通过环境变量安全传入，不要写入配置文件。',true);}catch(e){showMsg('jasyptMsg','计算失败:'+e.message,false);}}
+function clearJasypt(){document.getElementById('jasyptKey').value='';document.getElementById('jasyptPlaintext').value='';document.getElementById('jasyptCiphertext').value='';document.getElementById('jasyptMsg').className='msg';}
+async function copyJasypt(){const input=document.getElementById('jasyptCiphertext');if(!input.value)return;try{await navigator.clipboard.writeText(input.value);showMsg('jasyptMsg','密文已复制',true);}catch(e){input.select();document.execCommand('copy');showMsg('jasyptMsg','密文已复制',true);}}
 
 /* 数据源 */
 async function loadConnections(){try{connections=await api('/api/connections');renderConnTable();renderConnDropdowns();}catch(e){showMsg('connMsg','加载失败:'+e.message,false);}}
@@ -374,20 +652,20 @@ async function saveConn(){const id=document.getElementById('connId').value;const
 async function deleteConn(id){if(!confirm('确认删除?'))return;try{await api('/api/connections/'+id,{method:'DELETE'});await loadConnections();showMsg('connMsg','删除成功',true);}catch(e){showMsg('connMsg','删除失败:'+e.message,false);}}
 async function testConnById(id){try{const r=await api('/api/connections/'+id+'/test',{method:'POST'});alert(r.success?'连接成功! schemas: '+(r.schemas||[]).join(', '):'失败: '+r.message);}catch(e){alert('测试失败:'+e.message);}}
 async function testConn(){const body={url:document.getElementById('connUrl').value,username:document.getElementById('connUsername').value,password:document.getElementById('connPassword').value,schema:document.getElementById('connSchema').value};if(!body.url||!body.username||!body.schema){document.getElementById('connTestResult').innerHTML='<span style="color:var(--red)">请填写完整</span>';return;}document.getElementById('connTestResult').innerHTML='<span style="color:var(--text-2)">测试中...</span>';try{const r=await api('/api/connections/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const el=document.getElementById('connTestResult');el.innerHTML=r.success?'<span style="color:var(--green)">✓ '+esc(r.message)+'</span>':'<span style="color:var(--red)">✗ '+esc(r.message)+'</span>';}catch(e){document.getElementById('connTestResult').innerHTML='<span style="color:var(--red)">✗ '+esc(e.message)+'</span>';}}
-async function collectMeta(id){showMsg('connMsg','采集中...',true);try{const r=await api('/api/metadata/collect/'+id,{method:'POST'});await loadConnections();showMsg('connMsg',`采集成功! ${r.tableCount}表, ${r.sequenceCount}序列, 耗时${(r.durationMs/1000).toFixed(1)}s`,true);}catch(e){showMsg('connMsg','采集失败:'+e.message,false);}}
+async function collectMeta(id){showMsg('connMsg','采集中...',true);const pid=newProgressId();const wrap=document.getElementById('progressWrap');if(wrap){wrap.dataset.progressId=pid;wrap.style.display='block';document.getElementById('progressFill').style.width='0%';}startProgressPolling();try{const r=await api('/api/metadata/collect/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({progressId:pid})});await loadConnections();showMsg('connMsg',`采集成功! ${r.tableCount}表, ${r.sequenceCount}序列, 耗时${(r.durationMs/1000).toFixed(1)}s`,true);}catch(e){showMsg('connMsg','采集失败:'+e.message,false);}finally{stopProgressPolling();if(wrap)wrap.style.display='none';}}
 
 /* 元数据浏览 */
-async function browseMeta(id){currentMetaConnId=id;const c=connections.find(x=>x.id===id);document.getElementById('metaBrowserTitle').textContent=c?c.name:'';document.getElementById('metaBrowser').classList.add('show');document.getElementById('metaTableDetail').classList.remove('show');await loadMetaTables(id);await loadMetaSequences(id);}
+async function browseMeta(id){currentMetaConnId=id;const c=connections.find(x=>x.id===id);document.getElementById('metaBrowserTitle').textContent=c?c.name:'';document.getElementById('metaBrowser').classList.add('show');document.getElementById('metaTableDetail').classList.remove('show');metaTablePage=1;await loadMetaTables(id,1);await loadMetaSequences(id);}
 function switchMetaTab(el,prefix){document.querySelectorAll('#view-connections .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('metaTables').style.display=prefix==='tables'?'block':'none';document.getElementById('metaSequences').style.display=prefix==='sequences'?'block':'none';}
-async function loadMetaTables(id){try{const tables=await api('/api/metadata/'+id+'/tables');document.getElementById('metaTableBody').innerHTML=tables.length?tables.map(t=>`<tr><td><b>${esc(t.tableName)}</b></td><td>${esc(t.comment||'')}</td><td>${t.partitioned?`<span class="badge info">${partitionStrategyLabel(t.partitionStrategy)}</span>`:'-'}</td><td>${t.columnCount}</td><td>${t.constraintCount}</td><td>${t.indexCount}</td><td>${t.partitionCount||'-'}</td><td><button class="btn btn-sm" onclick="viewTableDetail(${id},'${esc(t.tableName)}')">详情</button></td></tr>`).join(''):'<tr><td colspan="8" class="empty-hint">暂无数据，请先采集</td></tr>';}catch(e){showMsg('connMsg','加载失败:'+e.message,false);}}
+async function loadMetaTables(id,page){try{const search=(document.getElementById('metaTableSearch')?.value||'').trim();const d=await api('/api/metadata/'+id+'/tables?page='+page+'&size=20'+(search?'&search='+encodeURIComponent(search):''));metaTablePage=d.page;let rows=d.items.map(t=>`<tr><td><b>${esc(t.tableName)}</b></td><td>${esc(t.comment||'')}</td><td>${t.partitioned?`<span class="badge info">${partitionStrategyLabel(t.partitionStrategy)}</span>`:'-'}</td><td>${t.columnCount}</td><td>${t.constraintCount}</td><td>${t.indexCount}</td><td>${t.partitionCount||'-'}</td><td><button class="btn btn-sm" onclick="viewTableDetail(${id},'${esc(t.tableName)}')">详情</button></td></tr>`).join('');if(!d.items.length)rows='<tr><td colspan="8" class="empty-hint">暂无数据，请先采集</td></tr>';document.getElementById('metaTableBody').innerHTML=rows;let pg='';if(d.totalPages>1){for(let i=1;i<=d.totalPages;i++){pg+=`<button class="btn btn-sm" ${i===d.page?'disabled':''} onclick="loadMetaTables(${id},${i})">${i}</button> `;}}document.getElementById('metaTablePager').innerHTML='<span style="font-size:12px;color:var(--text-3);margin-right:8px">共'+d.total+'张表</span>'+pg;}catch(e){showMsg('connMsg','加载失败:'+e.message,false);}}
 async function loadMetaSequences(id){try{const seqs=await api('/api/metadata/'+id+'/sequences');document.getElementById('metaSeqBody').innerHTML=seqs.length?seqs.map(s=>`<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.dataType||'')}</td><td>${s.startValue}</td><td>${s.incrementBy}</td><td>${s.minValue}</td><td>${s.maxValue}</td><td>${s.cacheSize}</td><td>${s.cycle?'是':'否'}</td></tr>`).join(''):'<tr><td colspan="8" class="empty-hint">无序列</td></tr>';}catch(e){}}
 async function viewTableDetail(id,name){try{const d=await api('/api/metadata/'+id+'/tables/'+encodeURIComponent(name));document.getElementById('metaTableDetailTitle').textContent=name;let html='';if(d.partitioned){html+=`<p style="margin-bottom:12px"><span class="badge info">分区表</span> 策略:${partitionStrategyLabel(d.partitionStrategy)} 键:${esc(d.partitionKey||'')}</p>`;}html+='<h3>字段</h3><table><thead><tr><th>#</th><th>列名</th><th>类型</th><th>可空</th><th>默认值</th><th>注释</th></tr></thead><tbody>';d.columns.forEach(c=>{html+=`<tr><td>${c.ordinal}</td><td><b>${esc(c.name)}</b></td><td>${esc(c.dataType)}</td><td>${c.nullable?'是':'<span style="color:var(--red)">否</span>'}</td><td>${esc(c.defaultValue||'-')}</td><td>${esc(c.comment||'')}</td></tr>`;});html+='</tbody></table>';if(d.constraints&&d.constraints.length){html+='<h3>约束</h3><table><thead><tr><th>名称</th><th>类型</th><th>定义</th><th>列</th><th>引用表</th></tr></thead><tbody>';d.constraints.forEach(c=>{html+=`<tr><td>${esc(c.name)}</td><td>${constraintTypeLabel(c.type)}</td><td>${esc(c.definition||'')}</td><td>${esc(c.columns||'')}</td><td>${esc(c.refTable||'-')}</td></tr>`;});html+='</tbody></table>';}if(d.indexes&&d.indexes.length){html+='<h3>索引</h3><table><thead><tr><th>名称</th><th>列</th><th>唯一</th><th>部分</th><th>定义</th></tr></thead><tbody>';d.indexes.forEach(i=>{html+=`<tr><td>${esc(i.name)}</td><td>${esc(i.columns||'')}</td><td>${i.unique?'是':'否'}</td><td>${i.partial?'是':'否'}</td><td>${esc(i.definition||'')}</td></tr>`;});html+='</tbody></table>';}if(d.partitions&&d.partitions.length){html+='<h3>分区</h3><table><thead><tr><th>#</th><th>分区名</th><th>父分区</th><th>边界</th><th>子分区</th><th>估算行数</th></tr></thead><tbody>';d.partitions.forEach(p=>{html+=`<tr><td>${p.ordinal}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.parentName||'-')}</td><td>${esc(p.boundaryExpr||'-')}</td><td>${p.subPartition?'是':'否'}</td><td>${p.estimatedRows||0}</td></tr>`;});html+='</tbody></table>';}document.getElementById('metaTableDetailContent').innerHTML=html;document.getElementById('metaTableDetail').classList.add('show');}catch(e){showMsg('connMsg','加载失败:'+e.message,false);}}
 
 /* 比对 */
-async function runCompare(type){const sid=document.getElementById('sourceConnId').value;const tid=document.getElementById('targetConnId').value;if(!sid||!tid){showMsg('errorMsg','请选择源和目标数据源',false);return;}document.getElementById('errorMsg').classList.remove('show');document.getElementById('loadingText').textContent=type==='structure'?'结构比对中(基于平台库元数据)...':type==='data'?'数据比对中(实时连库)...':'联合比对中...';document.getElementById('loading').classList.add('show');document.getElementById('compareResult').classList.remove('show');['btnStructure','btnData','btnBoth'].forEach(id=>document.getElementById(id).disabled=true);const body={sourceConnectionId:parseInt(sid),targetConnectionId:parseInt(tid),parallelism:parseInt(document.getElementById('parallelism').value),chunkSize:parseInt(document.getElementById('chunkSize').value),drillDown:document.getElementById('drillDown').value==='true',checksumFunction:document.getElementById('checksumFunction').value,syncDirection:document.getElementById('syncDirection').value,maxDisplayRows:parseInt(document.getElementById('maxDisplayRows').value),includeTables:parseList(document.getElementById('includeTables').value),excludeTables:parseList(document.getElementById('excludeTables').value),dataCompareTables:parseList(document.getElementById('dataCompareTables').value),generateDdl:document.getElementById('generateDdl').checked,generateDml:document.getElementById('generateDml').checked};try{const url='/api/compare/'+type;compareResult=await api(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});renderResult();}catch(e){showMsg('errorMsg','比对失败:'+e.message,false);}finally{document.getElementById('loading').classList.remove('show');['btnStructure','btnData','btnBoth'].forEach(id=>document.getElementById(id).disabled=false);}}
-function renderResult(){const r=compareResult.report;document.getElementById('schemaInfo').textContent=`源:${r.sourceSchema} → 目标:${r.targetSchema}`;document.getElementById('summaryGrid').innerHTML=`<div class="summary-box green"><div class="label">结构一致</div><div class="value">${r.structureConsistent}</div></div><div class="summary-box red"><div class="label">结构差异</div><div class="value">${r.structureDifferent}</div></div><div class="summary-box green"><div class="label">数据一致</div><div class="value">${r.dataConsistent}</div></div><div class="summary-box red"><div class="label">数据差异</div><div class="value">${r.dataDifferent}</div></div><div class="summary-box gray"><div class="label">数据跳过</div><div class="value">${r.dataSkipped}</div></div>`;renderStructure();renderData();renderSequences();document.getElementById('ddlScript').textContent=[compareResult.sequenceDdlScript,compareResult.ddlScript].filter(s=>s&&s.trim()).join('\n\n')||'-- 无DDL';document.getElementById('dmlScript').textContent=compareResult.dmlScript||'-- 无DML';document.getElementById('jsonView').textContent=JSON.stringify(compareResult.report,null,2);document.getElementById('compareResult').classList.add('show');}
+async function runCompare(type){const sid=document.getElementById('sourceConnId').value;const tid=document.getElementById('targetConnId').value;if(!sid||!tid){showMsg('errorMsg','请选择源和目标数据源',false);return;}document.getElementById('errorMsg').classList.remove('show');document.getElementById('loadingText').textContent=type==='structure'?'结构比对中(基于平台库元数据)...':type==='data'?'数据比对中(仅统计记录数)...':'联合比对中...';document.getElementById('loading').classList.add('show');document.getElementById('compareResult').classList.remove('show');['btnStructure','btnData','btnBoth'].forEach(id=>document.getElementById(id).disabled=true);const pid=newProgressId();const wrap=document.getElementById('progressWrap');if(wrap){wrap.dataset.progressId=pid;wrap.style.display='block';document.getElementById('progressFill').style.width='0%';document.getElementById('progressPhase').textContent='准备比对';document.getElementById('progressCount').textContent='';document.getElementById('progressPercent').textContent='0%';document.getElementById('progressEta').textContent='';}startProgressPolling();const body={sourceConnectionId:parseInt(sid),targetConnectionId:parseInt(tid),parallelism:parseInt(document.getElementById('parallelism').value),chunkSize:parseInt(document.getElementById('chunkSize').value),drillDown:false,checksumFunction:document.getElementById('checksumFunction').value,syncDirection:document.getElementById('syncDirection').value,maxDisplayRows:parseInt(document.getElementById('maxDisplayRows').value),tableTimeoutSeconds:parseInt(document.getElementById('tableTimeoutSeconds').value)||0,includeTables:parseList(document.getElementById('includeTables').value),excludeTables:parseList(document.getElementById('excludeTables').value),dataCompareTables:parseList(document.getElementById('dataCompareTables').value),generateDdl:document.getElementById('generateDdl').checked,generateDml:false,progressId:pid};try{const url='/api/compare/'+type;compareResult=await api(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});renderResult();}catch(e){showMsg('errorMsg','比对失败:'+e.message,false);}finally{stopProgressPolling();if(wrap)wrap.style.display='none';document.getElementById('loading').classList.remove('show');['btnStructure','btnData','btnBoth'].forEach(id=>document.getElementById(id).disabled=false);}}
+function renderResult(){const r=compareResult.report;document.getElementById('schemaInfo').textContent=`源:${r.sourceSchema} → 目标:${r.targetSchema}`;document.getElementById('summaryGrid').innerHTML=`<div class="summary-box green"><div class="label">结构一致</div><div class="value">${r.structureConsistent}</div></div><div class="summary-box red"><div class="label">结构差异</div><div class="value">${r.structureDifferent}</div></div><div class="summary-box green"><div class="label">数据一致</div><div class="value">${r.dataConsistent}</div></div><div class="summary-box red"><div class="label">数据差异</div><div class="value">${r.dataDifferent}</div></div><div class="summary-box gray"><div class="label">数据跳过</div><div class="value">${r.dataSkipped}</div></div>`;renderStructure();renderData();renderSequences();document.getElementById('ddlScript').textContent=[compareResult.sequenceDdlScript,compareResult.ddlScript].filter(s=>s&&s.trim()).join('\n\n')||'-- 无DDL';document.getElementById('jsonView').textContent=JSON.stringify(compareResult.report,null,2);document.getElementById('compareResult').classList.add('show');}
 function switchTab(el){document.querySelectorAll('#view-compare .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById(el.dataset.target).classList.add('active');}
-function switchScript(el,type){document.querySelectorAll('#tabScript .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('ddlWrap').style.display=type==='ddl'?'block':'none';document.getElementById('dmlWrap').style.display=type==='dml'?'block':'none';}
+function switchScript(el,type){document.querySelectorAll('#tabScript .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('ddlWrap').style.display='block';}
 function structBadge(s){return `<span class="badge ${s==='CONSISTENT'?'consistent':'different'}">${structStatusLabel(s)}</span>`;}
 function structStatusLabel(s){return {CONSISTENT:'一致',DIFFERENT:'差异',EXTRACTION_FAILED:'抽取失败'}[s]||s;}
 function dataBadge(s){return `<span class="badge ${s==='CONSISTENT'?'consistent':s==='DIFFERENT'?'different':'skipped'}">${dataStatusLabel(s)}</span>`;}
@@ -444,13 +722,34 @@ function renderStructure(){
   document.getElementById('structTable').innerHTML=html+'</tbody>';
 }
 
+/* 元数据历史查询 */
+function onHistConnChange(){loadHistSnapshotsOnly();document.getElementById('metaHistoryResult').classList.remove('show');}
+function renderHistConnDropdown(){const sel=document.getElementById('histConnId');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">-- 请选择 --</option>'+connections.map(c=>`<option value="${c.id}">${esc(c.name)} (${esc(c.schema)})</option>`).join('');sel.value=cur;}
+async function loadHistSnapshotsOnly(){const id=document.getElementById('histConnId')?.value;if(!id){document.getElementById('histSnapshotBody').innerHTML='<tr><td colspan="6" class="empty-hint">请选择数据源</td></tr>';return;}try{const snaps=await api('/api/metadata/'+id+'/snapshots');document.getElementById('histSnapshotBody').innerHTML=snaps.length?snaps.map(s=>`<tr><td>${s.snapshot_id}</td><td>${fmtTime(s.collected_at)}</td><td>${s.table_count}</td><td>${s.sequence_count}</td><td>${s.duration_ms?fmtDur(s.duration_ms):'-'}</td><td>${s.is_current?'<span class="badge info">当前</span>':'<span class="badge skipped">历史</span>'}</td></tr>`).join(''):'<tr><td colspan="6" class="empty-hint">暂无快照（该数据源尚未采集过元数据）</td></tr>';}catch(e){showMsg('metaHistoryMsg','快照加载失败:'+e.message,false);}}
+async function queryMetaHistory(){const id=document.getElementById('histConnId').value;const table=document.getElementById('histTableInput').value.trim();const column=document.getElementById('histColumnInput').value.trim();if(!id){showMsg('metaHistoryMsg','请选择数据源',false);return;}if(!table){showMsg('metaHistoryMsg','请输入表名',false);return;}try{const isColumn=!!column;const url='/api/metadata/'+id+'/tables/'+encodeURIComponent(table)+'/history'+(isColumn?'?columnName='+encodeURIComponent(column):'');const h=await api(url);let html='';if(isColumn){html='<table><thead><tr><th>快照ID</th><th>采集时间</th><th>状态</th><th>类型</th><th>可空</th><th>默认值</th><th>注释</th><th>序号</th></tr></thead><tbody>';if(!h.length){html+='<tr><td colspan="8" class="empty-hint">该表暂无历史快照</td></tr>';}h.forEach(v=>{html+=`<tr><td>${v.snapshot_id}</td><td>${fmtTime(v.collected_at)}</td><td>${v.column_exists?'<span class="badge consistent">存在</span>':'<span class="badge different">不存在</span>'}</td><td>${esc(v.data_type||'-')}</td><td>${v.nullable==null?'-':(v.nullable?'是':'否')}</td><td>${esc(v.default_value||'-')}</td><td>${esc(v.comment||'-')}</td><td>${v.ordinal==null?'-':v.ordinal}</td></tr>`;});}else{html='<table><thead><tr><th>快照ID</th><th>采集时间</th><th>表注释</th><th>分区</th><th>字段数</th><th>约束数</th><th>索引数</th></tr></thead><tbody>';if(!h.length){html+='<tr><td colspan="7" class="empty-hint">该表暂无历史快照</td></tr>';}h.forEach(v=>{html+=`<tr><td>${v.snapshot_id}</td><td>${fmtTime(v.collected_at)}</td><td>${esc(v.comment||'-')}</td><td>${v.partitioned?partitionStrategyLabel(v.partition_strategy):'-'}</td><td>${v.column_count}</td><td>${v.constraint_count}</td><td>${v.index_count}</td></tr>`;});}html+='</tbody></table>';document.getElementById('metaHistoryResultTitle').textContent=table+(isColumn?('.'+column):'')+' - 历史版本';document.getElementById('metaHistoryResultContent').innerHTML=html;document.getElementById('metaHistoryResult').classList.add('show');}catch(e){showMsg('metaHistoryMsg','历史查询失败:'+e.message,false);}}
+
+/* 定时比对任务 */
+let schedules=[];
+function renderSchedConnDropdowns(){const opts=connections.map(c=>`<option value="${c.id}">${esc(c.name)} (${esc(c.schema)})</option>`).join('');const s=document.getElementById('schedSource'),t=document.getElementById('schedTarget');if(s)s.innerHTML=opts;if(t)t.innerHTML=opts;}
+async function loadSchedules(){try{const ms=await api('/api/schedules/mail-status');const box=document.getElementById('mailStatusBox');if(box){box.innerHTML=ms.enabled?`<span class="meta-badge ok">邮件通知已启用</span> <span style="font-size:12px;color:var(--text-3)">发件人: ${esc(ms.from||'-')}${ms.cc?' · 抄送: '+esc(ms.cc):''}</span>`:`<span class="meta-badge warn">邮件通知未启用</span> <span style="font-size:12px;color:var(--text-3)">可通过环境变量 MAIL_ENABLED/MAIL_HOST/MAIL_PORT/MAIL_SSL/MAIL_STARTTLS/MAIL_SMTP_AUTH/MAIL_USERNAME/MAIL_PASSWORD/MAIL_FROM/MAIL_CC 配置</span>`;}schedules=await api('/api/schedules');const tb=document.getElementById('scheduleTableBody');if(!schedules.length){tb.innerHTML='<tr><td colspan="9" class="empty-hint">暂无任务，点击右上角新增</td></tr>';return;}tb.innerHTML=schedules.map(s=>`<tr><td>${s.id}</td><td><b>${esc(s.name)}</b></td><td>${esc(s.sourceConnectionName)} → ${esc(s.targetConnectionName)}</td><td>${s.compareType==='BOTH'?'结构+数据':'结构'}</td><td>${esc(s.dailyTime)}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.notifyEmails||'-')}</td><td>${s.lastRunAt?fmtTime(s.lastRunAt):'-'}<br>${s.lastStatus?`<span class="badge ${s.lastStatus==='SUCCESS'?'success':'failed'}">${s.lastStatus}</span>`:''}</td><td>${s.enabled?'<span class="badge success">启用</span>':'<span class="badge skipped">停用</span>'}</td><td style="white-space:nowrap"><button class="btn btn-success btn-sm" onclick="runScheduleNow(${s.id})">执行</button> <button class="btn btn-sm" onclick="viewScheduleRuns(${s.id},'${esc(s.name)}')">记录</button> <button class="btn btn-sm" onclick="toggleSchedule(${s.id})">${s.enabled?'停用':'启用'}</button> <button class="btn btn-sm" onclick="editSchedule(${s.id})">编辑</button> <button class="btn btn-danger btn-sm" onclick="deleteSchedule(${s.id})">删除</button></td></tr>`).join('');}catch(e){showMsg('scheduleMsg','加载失败:'+e.message,false);}}
+function openScheduleModal(){document.getElementById('scheduleModalTitle').textContent='新增定时比对任务';document.getElementById('schedId').value='';document.getElementById('schedName').value='';document.getElementById('schedSource').value=connections[0]?.id||'';document.getElementById('schedTarget').value=connections[1]?.id||connections[0]?.id||'';document.getElementById('schedTime').value='08:00';document.getElementById('schedType').value='STRUCTURE';document.getElementById('schedInclude').value='';document.getElementById('schedExclude').value='';document.getElementById('schedEmails').value='';document.getElementById('schedEnabled').checked=true;renderSchedConnDropdowns();document.getElementById('scheduleModal').classList.add('show');}
+function closeScheduleModal(){document.getElementById('scheduleModal').classList.remove('show');}
+function editSchedule(id){const s=schedules.find(x=>x.id===id);if(!s)return;document.getElementById('scheduleModalTitle').textContent='编辑定时比对任务';document.getElementById('schedId').value=s.id;document.getElementById('schedName').value=s.name;document.getElementById('schedSource').value=s.sourceConnectionId;document.getElementById('schedTarget').value=s.targetConnectionId;document.getElementById('schedTime').value=s.dailyTime;document.getElementById('schedType').value=s.compareType;document.getElementById('schedInclude').value=s.includeTables||'';document.getElementById('schedExclude').value=s.excludeTables||'';document.getElementById('schedEmails').value=s.notifyEmails||'';document.getElementById('schedEnabled').checked=s.enabled;document.getElementById('scheduleModal').classList.add('show');}
+async function saveSchedule(){const id=document.getElementById('schedId').value;const body={name:document.getElementById('schedName').value,sourceConnectionId:parseInt(document.getElementById('schedSource').value),targetConnectionId:parseInt(document.getElementById('schedTarget').value),dailyTime:document.getElementById('schedTime').value||'08:00',compareType:document.getElementById('schedType').value,includeTables:document.getElementById('schedInclude').value||null,excludeTables:document.getElementById('schedExclude').value||null,notifyEmails:document.getElementById('schedEmails').value||null,enabled:document.getElementById('schedEnabled').checked};try{if(id){await api('/api/schedules/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}else{await api('/api/schedules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}closeScheduleModal();await loadSchedules();showMsg('scheduleMsg','保存成功',true);}catch(e){showMsg('scheduleMsg','保存失败:'+e.message,false);}}
+async function deleteSchedule(id){if(!confirm('确认删除该任务?'))return;try{await api('/api/schedules/'+id,{method:'DELETE'});await loadSchedules();showMsg('scheduleMsg','删除成功',true);}catch(e){showMsg('scheduleMsg','删除失败:'+e.message,false);}}
+async function toggleSchedule(id){try{await api('/api/schedules/'+id+'/toggle',{method:'POST'});await loadSchedules();}catch(e){showMsg('scheduleMsg','操作失败:'+e.message,false);}}
+async function runScheduleNow(id){if(!confirm('立即执行将先采集两端元数据再比对，确认执行?'))return;showMsg('scheduleMsg','执行中...',true);try{const r=await api('/api/schedules/'+id+'/run',{method:'POST'});if(r.success){showMsg('scheduleMsg','执行成功! 源采集'+(r.collectSourceMs/1000).toFixed(1)+'s, 目标采集'+(r.collectTargetMs/1000).toFixed(1)+'s, 比对'+(r.compareMs/1000).toFixed(1)+'s, 总计'+(r.totalMs/1000).toFixed(1)+'s',true);}else{showMsg('scheduleMsg','执行失败:'+(r.errorMsg||r.status),false);}await loadSchedules();}catch(e){showMsg('scheduleMsg','执行失败:'+e.message,false);}}
+async function viewScheduleRuns(id,name,page){page=page||1;try{const d=await api('/api/schedules/'+id+'/runs?page='+page+'&size=10');document.getElementById('scheduleRunsTitle').textContent=name;const tb=document.getElementById('scheduleRunsBody');if(!d.items.length){tb.innerHTML='<tr><td colspan="9" class="empty-hint">暂无执行记录</td></tr>';}else{tb.innerHTML=d.items.map(r=>`<tr><td>${fmtTime(r.startedAt)}</td><td><span class="badge ${r.status==='SUCCESS'?'success':'failed'}">${r.status}</span></td><td>${fmtMs(r.collectSourceMs)}</td><td>${fmtMs(r.collectTargetMs)}</td><td>${fmtMs(r.compareMs)}</td><td>${fmtMs(r.notifyMs)}</td><td><b>${fmtMs(r.totalMs)}</b></td><td>${r.structureConsistent??'-'} / ${r.structureDifferent??'-'}</td><td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.errorMsg||'')}">${esc(r.errorMsg||'-')}</td></tr>`).join('');}let pg='';if(d.totalPages>1){for(let i=1;i<=d.totalPages;i++){pg+=`<button class="btn btn-sm" ${i===d.page?'disabled':''} onclick="viewScheduleRuns(${id},'${esc(name)}',${i})">${i}</button> `;}}document.getElementById('scheduleRunsPager').innerHTML=pg;document.getElementById('scheduleRuns').classList.add('show');}catch(e){showMsg('scheduleMsg','记录加载失败:'+e.message,false);}}
+function fmtMs(ms){if(ms==null)return'-';if(ms<1000)return ms+'ms';return (ms/1000).toFixed(1)+'s';}
+
 /* 历史 */
 async function loadHistory(page){historyPage=page;try{const d=await api(`/api/history?page=${page}&size=20`);renderHistory(d);}catch(e){showMsg('historyMsg','加载失败:'+e.message,false);}}
 function renderHistory(d){const tb=document.getElementById('historyTableBody');if(!d.items.length){tb.innerHTML='<tr><td colspan="9" class="empty-hint">暂无历史</td></tr>';document.getElementById('historyPager').innerHTML='';return;}tb.innerHTML=d.items.map(h=>{const cls=h.status==='SUCCESS'?'success':'failed';return `<tr><td>${h.id}</td><td><span class="badge info">${h.compareType||'-'}</span></td><td>${fmtTime(h.createdAt)}</td><td>${esc(h.sourceConnectionName||'-')}<br><span style="color:var(--text-3)">${esc(h.sourceSchema||'')}</span></td><td>${esc(h.targetConnectionName||'-')}<br><span style="color:var(--text-3)">${esc(h.targetSchema||'')}</span></td><td><span style="color:var(--green)">${h.structureConsistent}</span> / <span style="color:var(--red)">${h.structureDifferent}</span></td><td><span style="color:var(--green)">${h.dataConsistent}</span> / <span style="color:var(--red)">${h.dataDifferent}</span> / <span style="color:var(--text-2)">${h.dataSkipped}</span></td><td><span class="badge ${cls}">${h.status}</span></td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="viewHistory(${h.id})">详情</button> <button class="btn btn-danger btn-sm" onclick="deleteHistory(${h.id})">删除</button></td></tr>`;}).join('');const pg=document.getElementById('historyPager');if(d.totalPages>1){let l='';for(let i=1;i<=d.totalPages;i++){l+=`<button class="btn btn-sm" ${i===historyPage?'disabled':''} onclick="loadHistory(${i})">${i}</button> `;}pg.innerHTML=l;}else{pg.innerHTML='';}}
 async function viewHistory(id){try{const h=await api('/api/history/'+id);document.getElementById('historyDetailId').textContent=id;document.getElementById('historySummaryGrid').innerHTML=`<div class="summary-box green"><div class="label">结构一致</div><div class="value">${h.structureConsistent}</div></div><div class="summary-box red"><div class="label">结构差异</div><div class="value">${h.structureDifferent}</div></div><div class="summary-box green"><div class="label">数据一致</div><div class="value">${h.dataConsistent}</div></div><div class="summary-box red"><div class="label">数据差异</div><div class="value">${h.dataDifferent}</div></div><div class="summary-box gray"><div class="label">数据跳过</div><div class="value">${h.dataSkipped}</div></div>`;document.getElementById('historyReportJson').textContent=h.reportJson?JSON.stringify(JSON.parse(h.reportJson),null,2):'(无)';document.getElementById('historyDdl').textContent=h.ddlScript||'-- 无DDL';document.getElementById('historyDml').textContent=h.dmlScript||'-- 无DML';document.getElementById('historyOptions').textContent=h.optionsJson?JSON.stringify(JSON.parse(h.optionsJson),null,2):'(无)';document.getElementById('historyDetailPanel').classList.add('show');}catch(e){showMsg('historyMsg','加载失败:'+e.message,false);}}
 async function deleteHistory(id){if(!confirm('确认删除?'))return;try{await api('/api/history/'+id,{method:'DELETE'});await loadHistory(historyPage);showMsg('historyMsg','删除成功',true);}catch(e){showMsg('historyMsg','删除失败:'+e.message,false);}}
 function switchHistoryTab(el,prefix){document.querySelectorAll('#view-history .sub-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');['hReport','hDdl','hDml','hOptions'].forEach(id=>document.getElementById(id).style.display='none');document.getElementById(prefix).style.display='block';}
-window.addEventListener('load',loadConnections);
+window.addEventListener('load',()=>{loadConnections().then(renderHistConnDropdown);});
 </script>
+<script src="/app.js"></script>
 </body>
 </html>

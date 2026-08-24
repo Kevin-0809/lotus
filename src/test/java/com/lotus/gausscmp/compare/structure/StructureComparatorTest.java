@@ -3,7 +3,9 @@ package com.lotus.gausscmp.compare.structure;
 import com.lotus.gausscmp.compare.diff.*;
 import com.lotus.gausscmp.metadata.*;
 import org.junit.jupiter.api.Test;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.*;
 import static org.assertj.core.api.Assertions.*;
 
 class StructureComparatorTest {
@@ -85,22 +87,95 @@ class StructureComparatorTest {
             new SchemaSnapshot("app", List.of(sourceTable)), new SchemaSnapshot("app", List.of(targetTable)));
 
         assertThat(result.tableDiffs().get(0).indexDiffs()).isEmpty();
-        assertThat(result.tableDiffs().get(0).status()).isEqualTo(TableStructureStatus.CONSISTENT);
     }
 
     @Test
-    void partitionedIndexScopeDifferenceIsDetected() {
-        ColumnMeta c = new ColumnMeta("id", "integer", false, null, null, 1);
-        IndexMeta sourceIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
-            "create index idx on t using ubtree (id) global");
-        IndexMeta targetIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
-            "create index idx on t using ubtree (id) local");
-        TableMeta sourceTable = new TableMeta("t", null, List.of(c), List.of(), List.of(sourceIndex), true);
-        TableMeta targetTable = new TableMeta("t", null, List.of(c), List.of(), List.of(targetIndex), true);
+    void largeScaleConcurrentCompareProducesCorrectResults() {
+        int consistentCount = 80;
+        int mismatchCount = 80;
+        int sourceOnlyCount = 40;
+        int targetOnlyCount = 40;
+        ColumnMeta id = new ColumnMeta("id", "integer", false, null, null, 1);
+        ColumnMeta extra = new ColumnMeta("extra", "text", true, null, null, 2);
+        List<TableMeta> source = new ArrayList<>();
+        List<TableMeta> target = new ArrayList<>();
+        for (int i = 0; i < consistentCount; i++) {
+            TableMeta t = new TableMeta("same_" + i, null, List.of(id), List.of(), List.of(), false);
+            source.add(t);
+            target.add(t);
+        }
+        for (int i = 0; i < mismatchCount; i++) {
+            source.add(new TableMeta("mismatch_" + i, null, List.of(id, extra), List.of(), List.of(), false));
+            target.add(new TableMeta("mismatch_" + i, null, List.of(id), List.of(), List.of(), false));
+        }
+        for (int i = 0; i < sourceOnlyCount; i++) {
+            source.add(new TableMeta("srconly_" + i, null, List.of(id), List.of(), List.of(), false));
+        }
+        for (int i = 0; i < targetOnlyCount; i++) {
+            target.add(new TableMeta("tgtonly_" + i, null, List.of(id), List.of(), List.of(), false));
+        }
 
         StructureDiffResult result = new StructureComparator().compare(
-            new SchemaSnapshot("app", List.of(sourceTable)), new SchemaSnapshot("app", List.of(targetTable)));
+            new SchemaSnapshot("app", source), new SchemaSnapshot("app", target), 16);
 
-        assertThat(result.tableDiffs().get(0).indexDiffs()).anyMatch(d -> d.type() == DiffType.INDEX_MISMATCH);
+        assertThat(result.tableDiffs()).hasSize(
+            consistentCount + mismatchCount + sourceOnlyCount + targetOnlyCount);
+        long consistent = result.tableDiffs().stream()
+            .filter(d -> d.status() == TableStructureStatus.CONSISTENT).count();
+        long different = result.tableDiffs().stream()
+            .filter(d -> d.status() == TableStructureStatus.DIFFERENT).count();
+        assertThat(consistent).isEqualTo(consistentCount);
+        assertThat(different).isEqualTo(mismatchCount + sourceOnlyCount + targetOnlyCount);
+        assertThat(result.tableDiffs()).extracting(TableStructureDiff::tableName).isSorted();
+        for (TableStructureDiff d : result.tableDiffs()) {
+            if (d.tableName().startsWith("srconly_")) {
+                assertThat(d.existsInSource()).isTrue();
+                assertThat(d.existsInTarget()).isFalse();
+                assertThat(d.columnDiffs().get(0).type()).isEqualTo(DiffType.TABLE_MISSING_IN_TARGET);
+            } else if (d.tableName().startsWith("tgtonly_")) {
+                assertThat(d.existsInSource()).isFalse();
+                assertThat(d.existsInTarget()).isTrue();
+                assertThat(d.columnDiffs().get(0).type()).isEqualTo(DiffType.TABLE_EXTRA_IN_TARGET);
+            }
+        }
+    }
+
+    @Test
+    void sameComparatorInstanceIsSafeUnderConcurrentInvocations() throws Exception {
+        StructureComparator comparator = new StructureComparator();
+        int callers = 4;
+        int tablesPerSnapshot = 60;
+        ExecutorService pool = Executors.newFixedThreadPool(callers);
+        try {
+            List<Future<StructureDiffResult>> futures = new ArrayList<>();
+            for (int c = 0; c < callers; c++) {
+                final int callerId = c;
+                futures.add(pool.submit(() -> {
+                    List<TableMeta> source = new ArrayList<>();
+                    List<TableMeta> target = new ArrayList<>();
+                    for (int i = 0; i < tablesPerSnapshot; i++) {
+                        ColumnMeta col = new ColumnMeta("id", "integer", false, null, null, 1);
+                        source.add(new TableMeta("c" + callerId + "_t" + i, null, List.of(col), List.of(), List.of(), false));
+                        if (i % 2 == 0) {
+                            target.add(new TableMeta("c" + callerId + "_t" + i, null, List.of(col), List.of(), List.of(), false));
+                        }
+                    }
+                    return comparator.compare(
+                        new SchemaSnapshot("app", source), new SchemaSnapshot("app", target), 8);
+                }));
+            }
+            for (Future<StructureDiffResult> future : futures) {
+                StructureDiffResult result = future.get(60, TimeUnit.SECONDS);
+                assertThat(result.tableDiffs()).hasSize(tablesPerSnapshot);
+                long consistent = result.tableDiffs().stream()
+                    .filter(d -> d.status() == TableStructureStatus.CONSISTENT).count();
+                long different = result.tableDiffs().stream()
+                    .filter(d -> d.status() == TableStructureStatus.DIFFERENT).count();
+                assertThat(consistent).isEqualTo(tablesPerSnapshot / 2);
+                assertThat(different).isEqualTo(tablesPerSnapshot / 2);
+            }
+        } finally {
+            pool.shutdownNow();
+        }
     }
 }

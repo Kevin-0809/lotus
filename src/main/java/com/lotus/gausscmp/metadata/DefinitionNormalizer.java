@@ -53,7 +53,8 @@ public final class DefinitionNormalizer {
         String s = normalize(def, schema);
         s = INDEX_STORAGE_OPTIONS.matcher(s).replaceAll("");
         s = INDEX_TABLESPACE.matcher(s).replaceAll("");
-        if (!partitioned) s = INDEX_SCOPE.matcher(s).replaceAll(" ");
+        // GLOBAL/LOCAL is a storage placement detail and should not make equivalent indexes differ.
+        s = INDEX_SCOPE.matcher(s).replaceAll(" ");
         return s.replaceAll("\\s+", " ").trim();
     }
 

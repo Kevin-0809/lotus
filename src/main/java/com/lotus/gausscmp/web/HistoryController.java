@@ -2,9 +2,6 @@ package com.lotus.gausscmp.web;
 
 import com.lotus.gausscmp.web.entity.CompareHistory;
 import com.lotus.gausscmp.web.repository.HistoryRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -23,18 +20,21 @@ public class HistoryController {
     @GetMapping
     public Map<String, Object> list(@RequestParam(defaultValue = "1") int page,
                                     @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(Math.max(0, page - 1), Math.min(100, size));
-        Page<CompareHistory> p = repo.findAllByOrderByCreatedAtDesc(pageable);
+        int currentPage = Math.max(1, page);
+        int pageSize = Math.max(1, Math.min(100, size));
+        long offset = (long) (currentPage - 1) * pageSize;
+        List<CompareHistory> histories = repo.findPage(pageSize, offset);
+        long total = repo.countAll();
         List<Map<String, Object>> items = new ArrayList<>();
-        for (CompareHistory h : p.getContent()) {
+        for (CompareHistory h : histories) {
             items.add(toSummary(h));
         }
         return Map.of(
             "items", items,
-            "total", p.getTotalElements(),
-            "page", page,
-            "size", size,
-            "totalPages", p.getTotalPages()
+            "total", total,
+            "page", currentPage,
+            "size", pageSize,
+            "totalPages", (total + pageSize - 1) / pageSize
         );
     }
 
@@ -46,6 +46,9 @@ public class HistoryController {
 
     @DeleteMapping("/{id}")
     public Map<String, Object> delete(@PathVariable Long id) {
+        if (!repo.existsById(id)) {
+            throw new NoSuchElementException("历史记录不存在: " + id);
+        }
         repo.deleteById(id);
         return Map.of("success", true);
     }

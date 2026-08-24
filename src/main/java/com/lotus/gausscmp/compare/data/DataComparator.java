@@ -32,42 +32,10 @@ public final class DataComparator {
         try {
             long sCount = rowCount(sConn, sourceConfig.schema(), table);
             long tCount = rowCount(tConn, targetConfig.schema(), table);
-            if (sCount == 0 && tCount == 0) {
-                return new TableDataDiff(table, keyColumns, TableDataStatus.CONSISTENT, 0, 0,
-                    new ChunkStats(0, 0, 0), List.of(), null);
-            }
-            Chunker chunker = new Chunker(chunkSize);
-            int maxCount = (int) Math.max(sCount, tCount);
-            List<Chunker.Chunk> chunks = chunker.plan(maxCount);
-            var calc = new ChecksumCalculator(hashFunction, chunkSize);
-            int consistent = 0, mismatched = 0;
-            List<Chunker.Chunk> mismatchChunks = new ArrayList<>();
-            for (Chunker.Chunk chunk : chunks) {
-                var sRes = calc.calculateChunk(sConn, sourceConfig.schema(), table, keyColumns, chunk.offset(), chunk.limit());
-                var tRes = calc.calculateChunk(tConn, targetConfig.schema(), table, keyColumns, chunk.offset(), chunk.limit());
-                if (Objects.equals(sRes.checksum(), tRes.checksum()) && sRes.rowCount() == tRes.rowCount()) {
-                    consistent++;
-                } else {
-                    mismatched++;
-                    mismatchChunks.add(chunk);
-                }
-            }
-            if (mismatched == 0) {
-                return new TableDataDiff(table, keyColumns, TableDataStatus.CONSISTENT, sCount, tCount,
-                    new ChunkStats(chunks.size(), consistent, mismatched), List.of(), null);
-            }
-            List<RowDiff> rowDiffs = new ArrayList<>();
-            if (drillDown) {
-                var drill = new DrillDownComparator(keyColumns);
-                for (Chunker.Chunk chunk : mismatchChunks) {
-                    Map<String, Map<String, Object>> sRows = fetchRows(sConn, sourceConfig.schema(), table, keyColumns, chunk);
-                    Map<String, Map<String, Object>> tRows = fetchRows(tConn, targetConfig.schema(), table, keyColumns, chunk);
-                    rowDiffs.addAll(drill.compare(sRows, tRows));
-                    if (rowDiffs.size() >= maxDisplayRows) break;
-                }
-            }
-            return new TableDataDiff(table, keyColumns, TableDataStatus.DIFFERENT, sCount, tCount,
-                new ChunkStats(chunks.size(), consistent, mismatched), rowDiffs, null);
+            TableDataStatus status = sCount == tCount ? TableDataStatus.CONSISTENT : TableDataStatus.DIFFERENT;
+            ChunkStats stats = new ChunkStats(1, status == TableDataStatus.CONSISTENT ? 1 : 0,
+                status == TableDataStatus.DIFFERENT ? 1 : 0);
+            return new TableDataDiff(table, keyColumns, status, sCount, tCount, stats, List.of(), null);
         } catch (Exception e) {
             throw new RuntimeException("数据比对失败: " + table, e);
         }
@@ -81,32 +49,4 @@ public final class DataComparator {
         return 0;
     }
 
-    private Map<String, Map<String, Object>> fetchRows(Connection conn, String schema, String table,
-            List<String> keyColumns, Chunker.Chunk chunk) throws SQLException {
-        String keys = String.join(", ", keyColumns);
-        String sql = "SELECT * FROM \"" + schema + "\".\"" + table + "\" ORDER BY " + keys +
-                     " LIMIT " + chunk.limit() + " OFFSET " + chunk.offset();
-        Map<String, Map<String, Object>> rows = new LinkedHashMap<>();
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setFetchSize(1000);
-            try (ResultSet rs = ps.executeQuery()) {
-                ResultSetMetaData meta = rs.getMetaData();
-                while (rs.next()) {
-                    Map<String, Object> row = new LinkedHashMap<>();
-                    StringBuilder keyBuilder = new StringBuilder();
-                    for (int i = 1; i <= meta.getColumnCount(); i++) {
-                        String col = meta.getColumnName(i);
-                        Object val = rs.getObject(i);
-                        row.put(col, val);
-                    }
-                    for (String k : keyColumns) {
-                        if (keyBuilder.length() > 0) keyBuilder.append('\u0001');
-                        keyBuilder.append(row.get(k));
-                    }
-                    rows.put(keyBuilder.toString(), row);
-                }
-            }
-        }
-        return rows;
-    }
 }

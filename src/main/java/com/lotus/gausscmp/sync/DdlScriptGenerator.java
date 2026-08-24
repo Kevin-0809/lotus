@@ -27,7 +27,14 @@ public final class DdlScriptGenerator {
                 sb.append("-- DROP TABLE \"").append(schema).append("\".\"").append(diff.tableName()).append("\";\n\n");
                 continue;
             }
-            for (ColumnDiff cd : diff.columnDiffs()) generateColumnDdl(sb, diff.tableName(), cd, sourceTables.get(diff.tableName()));
+            Set<String> missingColumns = diff.columnDiffs().stream()
+                .filter(cd -> cd.type() == DiffType.COLUMN_MISSING_IN_TARGET)
+                .map(ColumnDiff::columnName)
+                .collect(java.util.stream.Collectors.toSet());
+            for (ColumnDiff cd : diff.columnDiffs()) {
+                if (missingColumns.contains(cd.columnName()) && cd.type() == DiffType.COLUMN_MISMATCH) continue;
+                generateColumnDdl(sb, diff.tableName(), cd, sourceTables.get(diff.tableName()));
+            }
             for (ConstraintDiff cd : diff.constraintDiffs()) generateConstraintDdl(sb, diff.tableName(), cd);
             for (IndexDiff id : diff.indexDiffs()) generateIndexDdl(sb, diff.tableName(), id);
             for (PartitionDiff pd : diff.partitionDiffs()) generatePartitionDdl(sb, diff.tableName(), pd);
@@ -116,13 +123,16 @@ public final class DdlScriptGenerator {
                 sb.append("-- COLUMN_MISSING_IN_TARGET: ").append(cd.columnName()).append("\n")
                   .append("ALTER TABLE \"").append(schema).append("\".\"").append(table)
                   .append("\" ADD COLUMN \"").append(cd.columnName()).append("\"");
-                String colType = null;
                 if (srcTable != null) {
-                    for (ColumnMeta cm : srcTable.columns()) {
-                        if (cm.name().equalsIgnoreCase(cd.columnName())) { colType = cm.dataType(); break; }
+                    ColumnMeta sourceColumn = srcTable.columns().stream()
+                        .filter(cm -> cm.name().equalsIgnoreCase(cd.columnName())).findFirst().orElse(null);
+                    if (sourceColumn != null) {
+                        if (sourceColumn.dataType() != null && !sourceColumn.dataType().isBlank())
+                            sb.append(" ").append(sourceColumn.dataType());
+                        if (!sourceColumn.nullable()) sb.append(" NOT NULL");
+                        if (sourceColumn.defaultValue() != null) sb.append(" DEFAULT ").append(sourceColumn.defaultValue());
                     }
                 }
-                if (colType != null && !colType.isBlank()) sb.append(" ").append(colType);
                 sb.append(";\n\n");
             }
             case COLUMN_EXTRA_IN_TARGET -> sb.append("-- COLUMN_EXTRA_IN_TARGET: ").append(cd.columnName()).append("（默认注释）\n")

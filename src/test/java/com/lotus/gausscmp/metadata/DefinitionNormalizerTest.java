@@ -60,11 +60,11 @@ class DefinitionNormalizerTest {
     }
 
     @Test
-    void preservesIndexScopeForPartitionedTables() {
+    void ignoresIndexScopeForPartitionedTablesAsStorageDetail() {
         String global = "create index idx on t using ubtree (id) global with (storage_type=ustore) tablespace pg_default";
         String local = "create index idx on t using ubtree (id) local (partition p0_idx) with (active_pages=12) tablespace pg_default";
 
         assertThat(DefinitionNormalizer.normalizeIndexDefinition(global, "adp", true))
-            .isNotEqualTo(DefinitionNormalizer.normalizeIndexDefinition(local, "adp", true));
+            .isEqualTo(DefinitionNormalizer.normalizeIndexDefinition(local, "adp", true));
     }
 }

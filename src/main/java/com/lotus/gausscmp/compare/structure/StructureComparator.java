@@ -1,25 +1,43 @@
 package com.lotus.gausscmp.compare.structure;
 
 import com.lotus.gausscmp.compare.diff.*;
+import com.lotus.gausscmp.concurrency.TableTaskExecutor;
 import com.lotus.gausscmp.metadata.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public final class StructureComparator {
+    private static final Logger LOG = LoggerFactory.getLogger(StructureComparator.class);
 
     public StructureDiffResult compare(SchemaSnapshot source, SchemaSnapshot target) {
+        return compare(source, target, 1);
+    }
+
+    public StructureDiffResult compare(SchemaSnapshot source, SchemaSnapshot target, int parallelism) {
         Map<String, TableMeta> srcMap = source.tables().stream()
             .collect(Collectors.toMap(TableMeta::name, t -> t, (a, b) -> a, TreeMap::new));
         Map<String, TableMeta> tgtMap = target.tables().stream()
             .collect(Collectors.toMap(TableMeta::name, t -> t, (a, b) -> a, TreeMap::new));
-        List<TableStructureDiff> diffs = new ArrayList<>();
         Set<String> allNames = new TreeSet<>();
         allNames.addAll(srcMap.keySet());
         allNames.addAll(tgtMap.keySet());
+        Map<String, TableStructureDiff> diffMap;
+        try (TableTaskExecutor<TableStructureDiff> executor = new TableTaskExecutor<>(parallelism)) {
+            diffMap = executor.execute(new ArrayList<>(allNames), name ->
+                compareTable(name, srcMap.get(name), tgtMap.get(name)));
+        } catch (Exception e) {
+            throw new IllegalStateException("按表并发结构比对失败", e);
+        }
+        List<TableStructureDiff> diffs = new ArrayList<>(allNames.size());
         for (String name : allNames) {
-            TableMeta s = srcMap.get(name);
-            TableMeta t = tgtMap.get(name);
-            diffs.add(compareTable(name, s, t));
+            TableStructureDiff diff = diffMap.get(name);
+            if (diff == null) {
+                LOG.debug("跳过无结果的表比对: table={}", name);
+                continue;
+            }
+            diffs.add(diff);
         }
         List<SequenceDiff> seqDiffs = compareSequences(
             source.sequences() != null ? source.sequences() : List.of(),
@@ -27,7 +45,7 @@ public final class StructureComparator {
         return new StructureDiffResult(diffs, seqDiffs);
     }
 
-    private TableStructureDiff compareTable(String name, TableMeta s, TableMeta t) {
+    public TableStructureDiff compareTable(String name, TableMeta s, TableMeta t) {
         if (s == null) {
             return new TableStructureDiff(name, false, true, TableStructureStatus.DIFFERENT,
                 List.of(new ColumnDiff(DiffType.TABLE_EXTRA_IN_TARGET, name, null, null, null)),
@@ -57,7 +75,14 @@ public final class StructureComparator {
         for (String n : unionKeys(sm, tm)) {
             ColumnMeta sc = sm.get(n), tc = tm.get(n);
             if (sc == null) { diffs.add(new ColumnDiff(DiffType.COLUMN_EXTRA_IN_TARGET, n, null, null, null)); continue; }
-            if (tc == null) { diffs.add(new ColumnDiff(DiffType.COLUMN_MISSING_IN_TARGET, n, null, null, null)); continue; }
+            if (tc == null) {
+                diffs.add(new ColumnDiff(DiffType.COLUMN_MISSING_IN_TARGET, n, null, null, null));
+                diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, sc.dataType(), null, "dataType"));
+                diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, String.valueOf(sc.nullable()), null, "nullable"));
+                diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, sc.defaultValue(), null, "defaultValue"));
+                diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, sc.comment(), null, "comment"));
+                continue;
+            }
             if (!eq(DefinitionNormalizer.normalize(sc.dataType()), DefinitionNormalizer.normalize(tc.dataType()))) diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, sc.dataType(), tc.dataType(), "dataType"));
             if (sc.nullable() != tc.nullable()) diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, String.valueOf(sc.nullable()), String.valueOf(tc.nullable()), "nullable"));
             if (!eq(DefinitionNormalizer.normalizeDefaultValue(sc.defaultValue()), DefinitionNormalizer.normalizeDefaultValue(tc.defaultValue()))) diffs.add(new ColumnDiff(DiffType.COLUMN_MISMATCH, n, sc.defaultValue(), tc.defaultValue(), "defaultValue"));

@@ -5,7 +5,9 @@ import org.hibernate.annotations.Comment;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "meta_table")
+@Table(name = "meta_table", indexes = {
+    @Index(name = "idx_meta_table_source", columnList = "connection_id, schema_name, table_name")
+})
 @Comment("采集的表元数据")
 public class MetaTable {
 
@@ -17,6 +19,10 @@ public class MetaTable {
     @Column(name = "connection_id", nullable = false)
     @Comment("数据源ID")
     private Long connectionId;
+
+    @Column(name = "connection_name", nullable = false, length = 200)
+    @Comment("数据源名称快照")
+    private String connectionName;
 
     @Column(name = "schema_name", nullable = false, length = 100)
     @Comment("Schema名称")
@@ -56,6 +62,8 @@ public class MetaTable {
     public void setId(Long id) { this.id = id; }
     public Long getConnectionId() { return connectionId; }
     public void setConnectionId(Long v) { this.connectionId = v; }
+    public String getConnectionName() { return connectionName; }
+    public void setConnectionName(String v) { this.connectionName = v; }
     public String getSchemaName() { return schemaName; }
     public void setSchemaName(String v) { this.schemaName = v; }
     public String getTableName() { return tableName; }
