@@ -14,6 +14,8 @@ public final class DefinitionNormalizer {
         "\\s+tablespace\\s+[^\\s,)]+", Pattern.CASE_INSENSITIVE);
     private static final Pattern INDEX_SCOPE = Pattern.compile(
         "\\b(global|local)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern QUOTED_NEXTVAL_SEQUENCE = Pattern.compile(
+        "(?i)(nextval\\('\\s*)\"([^\"]+)\"('::regclass\\s*\\))");
 
     public static String normalize(String def) {
         if (def == null) return null;
@@ -71,6 +73,10 @@ public final class DefinitionNormalizer {
     }
 
     public static String normalizeDefaultValue(String val) {
+        return normalizeDefaultValue(val, null);
+    }
+
+    public static String normalizeDefaultValue(String val, String schema) {
         if (val == null) return null;
         String s = val.trim().toLowerCase().replaceAll("\\s+", " ");
         if (s.equals("null")) return "null";
@@ -78,6 +84,11 @@ public final class DefinitionNormalizer {
             s = s.substring(1, s.length() - 1);
         }
         if (s.startsWith("now") || s.startsWith("current_timestamp") || s.startsWith("pg_systimestamp")) return "current_timestamp";
+        if (schema != null && !schema.isBlank()) {
+            String schemaPattern = Pattern.quote(schema.trim().toLowerCase());
+            s = s.replaceAll("(?i)(nextval\\('\\s*)\\\"?" + schemaPattern + "\\\"?\\.", "$1");
+            s = QUOTED_NEXTVAL_SEQUENCE.matcher(s).replaceAll("$1$2$3");
+        }
         return s;
     }
 }

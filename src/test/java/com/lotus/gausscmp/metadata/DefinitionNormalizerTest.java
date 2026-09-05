@@ -30,6 +30,31 @@ class DefinitionNormalizerTest {
     }
 
     @Test
+    void ignoresSchemaPrefixInNextvalRegclassDefaults() {
+        assertThat(DefinitionNormalizer.normalizeDefaultValue(
+            "nextval('ccbs_base_db.kmig_trptn_err_log_id_seq'::regclass)", "ccbs_base_db"))
+            .isEqualTo("nextval('kmig_trptn_err_log_id_seq'::regclass)");
+        assertThat(DefinitionNormalizer.normalizeDefaultValue(
+            "nextval('ccbs.kmig_trptn_err_log_id_seq'::regclass)", "ccbs"))
+            .isEqualTo("nextval('kmig_trptn_err_log_id_seq'::regclass)");
+    }
+
+    @Test
+    void keepsDifferentNextvalSequenceNamesDifferent() {
+        assertThat(DefinitionNormalizer.normalizeDefaultValue(
+            "nextval('ccbs_base_db.first_seq'::regclass)", "ccbs_base_db"))
+            .isNotEqualTo(DefinitionNormalizer.normalizeDefaultValue(
+                "nextval('ccbs.second_seq'::regclass)", "ccbs"));
+    }
+
+    @Test
+    void ignoresSchemaPrefixInQuotedNextvalRegclassDefaults() {
+        assertThat(DefinitionNormalizer.normalizeDefaultValue(
+            "nextval('\"CCBS_BASE_DB\".\"KMIG_SEQ\"'::regclass)", "ccbs_base_db"))
+            .isEqualTo("nextval('kmig_seq'::regclass)");
+    }
+
+    @Test
     void stripsSchemaPrefixFromDefinition() {
         assertThat(DefinitionNormalizer.normalize("create index idx on adp.t1 (id)", "adp"))
             .isEqualTo("create index idx on t1 (id)");

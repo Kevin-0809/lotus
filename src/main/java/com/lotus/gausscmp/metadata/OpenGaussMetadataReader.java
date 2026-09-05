@@ -119,7 +119,7 @@ public final class OpenGaussMetadataReader implements MetadataReader {
                             rs.getString("attname"),
                             TypeNormalizer.normalize(rs.getString("type")),
                             !rs.getBoolean("attnotnull"),
-                            DefinitionNormalizer.normalizeDefaultValue(rs.getString("defaultval")),
+                            DefinitionNormalizer.normalizeDefaultValue(rs.getString("defaultval"), schema),
                             rs.getString("colcomment"),
                             rs.getInt("attnum")));
                 }
@@ -330,7 +330,7 @@ public final class OpenGaussMetadataReader implements MetadataReader {
                         rs.getString("attname"),
                         TypeNormalizer.normalize(rs.getString("type")),
                         !rs.getBoolean("attnotnull"),
-                        DefinitionNormalizer.normalizeDefaultValue(rs.getString("defaultval")),
+                        DefinitionNormalizer.normalizeDefaultValue(rs.getString("defaultval"), schema),
                         rs.getString("colcomment"),
                         rs.getInt("attnum")));
                 }
