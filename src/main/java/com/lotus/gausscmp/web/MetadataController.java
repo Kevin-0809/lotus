@@ -171,6 +171,7 @@ public class MetadataController {
             im.put("columns", i.getColumns());
             im.put("unique", i.isUnique());
             im.put("partial", i.isPartial());
+            im.put("usable", i.isUsable());
             im.put("whereClause", i.getWhereClause());
             im.put("definition", i.getDefinition());
             indexes.add(im);

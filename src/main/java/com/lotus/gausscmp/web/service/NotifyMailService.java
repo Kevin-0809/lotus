@@ -134,7 +134,7 @@ public class NotifyMailService {
                     b.append("<li>").append(!table.existsInSource() ? "源端缺失表" : "目标端缺失表").append("</li>");
                 table.columnDiffs().forEach(d -> appendItem(b, d.type().getLabel() + "：字段 " + d.columnName() + "（源：" + safe(d.sourceValue()) + "；目标：" + safe(d.targetValue()) + "）"));
                 table.constraintDiffs().forEach(d -> appendItem(b, d.type().getLabel() + "：约束 " + d.constraintName() + "（源：" + safe(d.sourceDef()) + "；目标：" + safe(d.targetDef()) + "）"));
-                table.indexDiffs().forEach(d -> appendItem(b, d.type().getLabel() + "：索引 " + d.indexName() + "（源：" + safe(d.sourceDef()) + "；目标：" + safe(d.targetDef()) + "）"));
+                table.indexDiffs().forEach(d -> appendItem(b, indexDiffLine(d)));
                 int partitionLimit = Math.min(10, table.partitionDiffs().size());
                 for (int i = 0; i < partitionLimit; i++) {
                     PartitionDiff d = table.partitionDiffs().get(i);
@@ -175,6 +175,13 @@ public class NotifyMailService {
     }
 
     private static String safe(String value) { return value == null || value.isBlank() ? "-" : value; }
+
+    /** 索引失效类差异优先展示状态说明，其余展示两侧定义 */
+    private static String indexDiffLine(IndexDiff d) {
+        String base = d.type().getLabel() + "：索引 " + d.indexName();
+        if (d.note() != null && !d.note().isBlank()) return base + "（" + d.note() + "）";
+        return base + "（源：" + safe(d.sourceDef()) + "；目标：" + safe(d.targetDef()) + "）";
+    }
 
     private static String row(String k, String v) {
         return "<tr><td style='border:1px solid #ececec;padding:6px 14px;background:#fafafa'>" + k

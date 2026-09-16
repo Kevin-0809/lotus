@@ -233,12 +233,12 @@ public class MetadataCollectService {
                     indexIds[ii++], snapshotId, tableId, connectionId, conn.getName(), conn.getSchema(),
                     tm.name(), idx.name(),
                     idx.columns() != null ? String.join(",", idx.columns()) : null,
-                    idx.isUnique(), idx.isPartial(), idx.whereClause(), idx.definition()});
+                    idx.isUnique(), idx.isPartial(), idx.usable(), idx.whereClause(), idx.definition()});
             }
         }
         batchUpdate("INSERT INTO meta_index(id, snapshot_id, table_id, connection_id, connection_name, " +
-                "schema_name, table_name, index_name, columns, is_unique, is_partial, where_clause, definition) " +
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "schema_name, table_name, index_name, columns, is_unique, is_partial, is_usable, where_clause, definition) " +
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             indexRows);
 
         List<Object[]> partitionRows = new ArrayList<>();
@@ -300,7 +300,7 @@ public class MetadataCollectService {
         "meta_constraint", "id, table_id, connection_id, connection_name, schema_name, table_name, " +
             "constraint_name, type, definition, columns, ref_table",
         "meta_index", "id, table_id, connection_id, connection_name, schema_name, table_name, " +
-            "index_name, columns, is_unique, is_partial, where_clause, definition",
+            "index_name, columns, is_unique, is_partial, is_usable, where_clause, definition",
         "meta_partition", "id, table_id, connection_id, connection_name, schema_name, table_name, " +
             "partition_name, parent_name, ordinal, boundary_expr, is_sub_partition, tablespace, estimated_rows");
 

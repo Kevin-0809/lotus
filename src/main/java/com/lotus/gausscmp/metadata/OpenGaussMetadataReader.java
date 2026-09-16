@@ -3,6 +3,7 @@ package com.lotus.gausscmp.metadata;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -172,7 +173,8 @@ public final class OpenGaussMetadataReader implements MetadataReader {
         Map<String, List<IndexMeta>> indexesByTable = new HashMap<>();
         String indexesSql = """
             SELECT c.relname AS tablename, i.relname AS idxname, pg_get_indexdef(ix.indexrelid) AS def,
-                   ix.indisunique, pg_get_expr(ix.indpred, ix.indrelid) AS pred,
+                   ix.indisunique, ix.indisusable, ix.indisvalid, ix.indisready,
+                   pg_get_expr(ix.indpred, ix.indrelid) AS pred,
                    (SELECT string_agg(a.attname, ',' ORDER BY k.ord)
                     FROM generate_subscripts(ix.indkey::int2[], 1) AS k(ord)
                     JOIN pg_attribute a ON a.attrelid = ix.indrelid
@@ -199,7 +201,8 @@ public final class OpenGaussMetadataReader implements MetadataReader {
                             rs.getBoolean("indisunique"),
                             pred != null,
                             pred != null ? DefinitionNormalizer.normalize(pred, schema) : null,
-                            DefinitionNormalizer.normalize(rs.getString("def"), schema)));
+                            DefinitionNormalizer.normalize(rs.getString("def"), schema),
+                            readIndexUsable(rs)));
                 }
             }
         } catch (Exception e) {
@@ -380,7 +383,8 @@ public final class OpenGaussMetadataReader implements MetadataReader {
     private List<IndexMeta> readIndexes(Connection conn, String schema, String table) throws Exception {
         String sql = """
             SELECT i.relname AS idxname, pg_get_indexdef(ix.indexrelid) AS def,
-                   ix.indisunique, pg_get_expr(ix.indpred, ix.indrelid) AS pred,
+                   ix.indisunique, ix.indisusable, ix.indisvalid, ix.indisready,
+                   pg_get_expr(ix.indpred, ix.indrelid) AS pred,
                    (SELECT string_agg(a.attname, ',' ORDER BY k.ord)
                     FROM generate_subscripts(ix.indkey::int2[], 1) AS k(ord)
                     JOIN pg_attribute a ON a.attrelid = ix.indrelid
@@ -407,11 +411,20 @@ public final class OpenGaussMetadataReader implements MetadataReader {
                         rs.getBoolean("indisunique"),
                         pred != null,
                         pred != null ? DefinitionNormalizer.normalize(pred, schema) : null,
-                        DefinitionNormalizer.normalize(rs.getString("def"), schema)));
+                        DefinitionNormalizer.normalize(rs.getString("def"), schema),
+                        readIndexUsable(rs)));
                 }
             }
         }
         return idxs;
+    }
+
+    /**
+     * 索引可用性：openGauss 中 indisusable 为假代表索引被置为 UNUSABLE（对 insert/select 均不可用），
+     * indisvalid/indisready 为假代表索引构建失败或未就绪，三者必须同时为真索引才真正可用。
+     */
+    private static boolean readIndexUsable(ResultSet rs) throws SQLException {
+        return rs.getBoolean("indisusable") && rs.getBoolean("indisvalid") && rs.getBoolean("indisready");
     }
 
     private record PartitionInfo(String strategy, String key) {}

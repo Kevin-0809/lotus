@@ -51,6 +51,10 @@ public class MetaIndex {
     @Comment("是否部分索引(true=是,false=否)")
     private boolean partial;
 
+    @Column(name = "is_usable", nullable = false)
+    @Comment("索引是否可用(true=可用,false=已失效)")
+    private boolean usable;
+
     @Column(name = "where_clause", length = 2000)
     @Comment("部分索引WHERE条件")
     private String whereClause;
@@ -81,6 +85,8 @@ public class MetaIndex {
     public void setUnique(boolean v) { this.unique = v; }
     public boolean isPartial() { return partial; }
     public void setPartial(boolean v) { this.partial = v; }
+    public boolean isUsable() { return usable; }
+    public void setUsable(boolean v) { this.usable = v; }
     public String getWhereClause() { return whereClause; }
     public void setWhereClause(String v) { this.whereClause = v; }
     public String getDefinition() { return definition; }

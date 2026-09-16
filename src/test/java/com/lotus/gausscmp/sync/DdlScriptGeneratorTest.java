@@ -50,6 +50,47 @@ class DdlScriptGeneratorTest {
         assertThat(ddl).contains("CREATE INDEX \"idx_t\"");
     }
 
+    @Test
+    void generatesRebuildForUnusableIndexInTarget() {
+        TableStructureDiff diff = new TableStructureDiff("t", true, true, TableStructureStatus.DIFFERENT,
+            List.of(), List.of(),
+            List.of(new IndexDiff(DiffType.INDEX_UNUSABLE_IN_TARGET, "idx_t",
+                "create index idx_t on t (id)", "create index idx_t on t (id)",
+                "目标库索引已失效（不可用）")),
+            Optional.empty());
+        String ddl = new DdlScriptGenerator("app").generate(List.of(diff), java.util.Map.of());
+        assertThat(ddl).contains("-- INDEX_UNUSABLE_IN_TARGET: idx_t");
+        assertThat(ddl).contains("ALTER INDEX \"app\".\"idx_t\" REBUILD;");
+    }
+
+    @Test
+    void rebuildIsSkippedWhenIndexIsRecreated() {
+        TableStructureDiff diff = new TableStructureDiff("t", true, true, TableStructureStatus.DIFFERENT,
+            List.of(), List.of(),
+            List.of(new IndexDiff(DiffType.INDEX_MISMATCH, "idx_t",
+                    "create index idx_t on t (id)", "create index idx_t on t (id, name)"),
+                new IndexDiff(DiffType.INDEX_UNUSABLE_IN_TARGET, "idx_t",
+                    "create index idx_t on t (id)", "create index idx_t on t (id)",
+                    "目标库索引已失效（不可用）")),
+            Optional.empty());
+        String ddl = new DdlScriptGenerator("app").generate(List.of(diff), java.util.Map.of());
+        assertThat(ddl).contains("-- INDEX_MISMATCH: idx_t");
+        assertThat(ddl).doesNotContain("ALTER INDEX");
+    }
+
+    @Test
+    void unusableIndexInSourceOnlyProducesComment() {
+        TableStructureDiff diff = new TableStructureDiff("t", true, true, TableStructureStatus.DIFFERENT,
+            List.of(), List.of(),
+            List.of(new IndexDiff(DiffType.INDEX_UNUSABLE_IN_SOURCE, "idx_t",
+                "create index idx_t on t (id)", "create index idx_t on t (id)",
+                "源库索引已失效（不可用）")),
+            Optional.empty());
+        String ddl = new DdlScriptGenerator("app").generate(List.of(diff), java.util.Map.of());
+        assertThat(ddl).contains("-- INDEX_UNUSABLE_IN_SOURCE: idx_t");
+        assertThat(ddl).doesNotContain("ALTER INDEX");
+    }
+
     private static java.util.Map<String, TableMeta> tableMetaMap(TableMeta... tables) {
         var m = new java.util.HashMap<String, TableMeta>();
         for (TableMeta t : tables) m.put(t.name(), t);

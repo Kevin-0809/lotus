@@ -123,6 +123,7 @@ CREATE TABLE IF NOT EXISTS meta_index (
     columns VARCHAR(500),
     is_unique BOOLEAN NOT NULL DEFAULT FALSE,
     is_partial BOOLEAN NOT NULL DEFAULT FALSE,
+    is_usable BOOLEAN NOT NULL DEFAULT TRUE,
     where_clause VARCHAR(2000),
     definition VARCHAR(2000)
 );
@@ -247,6 +248,7 @@ COMMENT ON COLUMN lotus.meta_index.index_name IS '索引名';
 COMMENT ON COLUMN lotus.meta_index.columns IS '索引列名(逗号分隔)';
 COMMENT ON COLUMN lotus.meta_index.is_unique IS '是否唯一索引(true=是,false=否)';
 COMMENT ON COLUMN lotus.meta_index.is_partial IS '是否部分索引(true=是,false=否)';
+COMMENT ON COLUMN lotus.meta_index.is_usable IS '索引是否可用(false=已失效,需REBUILD)';
 COMMENT ON COLUMN lotus.meta_index.where_clause IS '部分索引WHERE条件';
 COMMENT ON COLUMN lotus.meta_index.definition IS '索引完整定义';
 
@@ -322,6 +324,9 @@ CREATE INDEX IF NOT EXISTS idx_meta_column_snapshot ON meta_column (snapshot_id)
 CREATE INDEX IF NOT EXISTS idx_meta_constraint_snapshot ON meta_constraint (snapshot_id);
 CREATE INDEX IF NOT EXISTS idx_meta_index_snapshot ON meta_index (snapshot_id);
 CREATE INDEX IF NOT EXISTS idx_meta_partition_snapshot ON meta_partition (snapshot_id);
+
+-- 索引可用性列（已有环境平滑升级，历史数据按可用处理）
+ALTER TABLE meta_index ADD COLUMN IF NOT EXISTS is_usable BOOLEAN NOT NULL DEFAULT TRUE;
 
 -- 历史备份表：主键为 (snapshot_id, id)，完整保留采集时刻的元数据
 CREATE TABLE IF NOT EXISTS meta_table_history (
@@ -399,6 +404,7 @@ CREATE TABLE IF NOT EXISTS meta_index_history (
     columns VARCHAR(500),
     is_unique BOOLEAN NOT NULL DEFAULT FALSE,
     is_partial BOOLEAN NOT NULL DEFAULT FALSE,
+    is_usable BOOLEAN NOT NULL DEFAULT TRUE,
     where_clause VARCHAR(2000),
     definition VARCHAR(2000),
     PRIMARY KEY (snapshot_id, id)
@@ -440,6 +446,8 @@ CREATE INDEX IF NOT EXISTS idx_meta_column_history_table_col
     ON meta_column_history (snapshot_id, table_id, column_name);
 CREATE INDEX IF NOT EXISTS idx_meta_constraint_history_table
     ON meta_constraint_history (snapshot_id, table_id);
+ALTER TABLE meta_index_history ADD COLUMN IF NOT EXISTS is_usable BOOLEAN NOT NULL DEFAULT TRUE;
+COMMENT ON COLUMN lotus.meta_index_history.is_usable IS '索引是否可用(false=已失效,需REBUILD)';
 CREATE INDEX IF NOT EXISTS idx_meta_index_history_table
     ON meta_index_history (snapshot_id, table_id);
 CREATE INDEX IF NOT EXISTS idx_meta_partition_history_table

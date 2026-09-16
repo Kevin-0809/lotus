@@ -90,6 +90,70 @@ class StructureComparatorTest {
     }
 
     @Test
+    void unusableIndexInTargetIsReported() {
+        ColumnMeta c = new ColumnMeta("id", "integer", false, null, null, 1);
+        IndexMeta sourceIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
+            "create index idx on t (id)");
+        IndexMeta targetIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
+            "create index idx on t (id)", false);
+        StructureDiffResult result = new StructureComparator().compare(
+            new SchemaSnapshot("app", List.of(new TableMeta("t", null, List.of(c), List.of(), List.of(sourceIndex), false))),
+            new SchemaSnapshot("app", List.of(new TableMeta("t", null, List.of(c), List.of(), List.of(targetIndex), false))));
+
+        assertThat(result.tableDiffs().get(0).status()).isEqualTo(TableStructureStatus.DIFFERENT);
+        assertThat(result.tableDiffs().get(0).indexDiffs()).hasSize(1);
+        IndexDiff diff = result.tableDiffs().get(0).indexDiffs().get(0);
+        assertThat(diff.type()).isEqualTo(DiffType.INDEX_UNUSABLE_IN_TARGET);
+        assertThat(diff.note()).contains("目标库索引已失效");
+    }
+
+    @Test
+    void unusableIndexInSourceIsReported() {
+        ColumnMeta c = new ColumnMeta("id", "integer", false, null, null, 1);
+        IndexMeta sourceIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
+            "create index idx on t (id)", false);
+        IndexMeta targetIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
+            "create index idx on t (id)");
+        StructureDiffResult result = new StructureComparator().compare(
+            new SchemaSnapshot("app", List.of(new TableMeta("t", null, List.of(c), List.of(), List.of(sourceIndex), false))),
+            new SchemaSnapshot("app", List.of(new TableMeta("t", null, List.of(c), List.of(), List.of(targetIndex), false))));
+
+        assertThat(result.tableDiffs().get(0).indexDiffs()).hasSize(1);
+        assertThat(result.tableDiffs().get(0).indexDiffs().get(0).type())
+            .isEqualTo(DiffType.INDEX_UNUSABLE_IN_SOURCE);
+    }
+
+    @Test
+    void unusableIndexOnBothSidesIsConsistent() {
+        ColumnMeta c = new ColumnMeta("id", "integer", false, null, null, 1);
+        IndexMeta sourceIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
+            "create index idx on t (id)", false);
+        IndexMeta targetIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
+            "create index idx on t (id)", false);
+        StructureDiffResult result = new StructureComparator().compare(
+            new SchemaSnapshot("app", List.of(new TableMeta("t", null, List.of(c), List.of(), List.of(sourceIndex), false))),
+            new SchemaSnapshot("app", List.of(new TableMeta("t", null, List.of(c), List.of(), List.of(targetIndex), false))));
+
+        assertThat(result.tableDiffs().get(0).indexDiffs()).isEmpty();
+        assertThat(result.tableDiffs().get(0).status()).isEqualTo(TableStructureStatus.CONSISTENT);
+    }
+
+    @Test
+    void unusableIndexKeepsDefinitionMismatchAsSeparateDiff() {
+        ColumnMeta c = new ColumnMeta("id", "integer", false, null, null, 1);
+        IndexMeta sourceIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
+            "create index idx on t (id)");
+        IndexMeta targetIndex = new IndexMeta("idx", "t", List.of("id"), false, false, null,
+            "create index idx on t (id, id)", false);
+        StructureDiffResult result = new StructureComparator().compare(
+            new SchemaSnapshot("app", List.of(new TableMeta("t", null, List.of(c), List.of(), List.of(sourceIndex), false))),
+            new SchemaSnapshot("app", List.of(new TableMeta("t", null, List.of(c), List.of(), List.of(targetIndex), false))));
+
+        assertThat(result.tableDiffs().get(0).indexDiffs()).extracting(IndexDiff::type)
+            .containsExactly(DiffType.INDEX_UNUSABLE_IN_TARGET, DiffType.INDEX_MISMATCH);
+    }
+
+    @Test
     void largeScaleConcurrentCompareProducesCorrectResults() {
         int consistentCount = 80;
         int mismatchCount = 80;

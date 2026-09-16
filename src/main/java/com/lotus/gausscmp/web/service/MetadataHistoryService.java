@@ -77,7 +77,7 @@ public class MetadataHistoryService {
             "FROM meta_constraint_history WHERE snapshot_id = ? AND table_id = ? ORDER BY constraint_name",
             snapshotId, tableId));
         head.put("indexes", jdbcTemplate.queryForList(
-            "SELECT index_name, columns, is_unique, is_partial, where_clause, definition " +
+            "SELECT index_name, columns, is_unique, is_partial, is_usable, where_clause, definition " +
             "FROM meta_index_history WHERE snapshot_id = ? AND table_id = ? ORDER BY index_name",
             snapshotId, tableId));
         head.put("partitions", jdbcTemplate.queryForList(

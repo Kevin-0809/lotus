@@ -113,12 +113,25 @@ public final class StructureComparator {
             IndexMeta si = sm.get(n), ti = tm.get(n);
             if (si == null) { diffs.add(new IndexDiff(DiffType.INDEX_EXTRA_IN_TARGET, n, null, null)); continue; }
             if (ti == null) { diffs.add(new IndexDiff(DiffType.INDEX_MISSING_IN_TARGET, n, si.definition(), null)); continue; }
+            if (si.usable() != ti.usable()) {
+                diffs.add(indexUsableDiff(n, si, ti));
+            }
             if (!eq(DefinitionNormalizer.normalizeIndexDefinition(si.definition(), s.name(), s.partitioned()),
                      DefinitionNormalizer.normalizeIndexDefinition(ti.definition(), t.name(), t.partitioned()))) {
                 diffs.add(new IndexDiff(DiffType.INDEX_MISMATCH, n, si.definition(), ti.definition()));
             }
         }
         return diffs;
+    }
+
+    /** 两侧索引定义相同但可用性不同：目标库失效需 REBUILD，源库失效则提示先修复源端 */
+    private static IndexDiff indexUsableDiff(String name, IndexMeta si, IndexMeta ti) {
+        if (!ti.usable()) {
+            return new IndexDiff(DiffType.INDEX_UNUSABLE_IN_TARGET, name, si.definition(), ti.definition(),
+                "目标库索引已失效（不可用），执行 ALTER INDEX \"" + name + "\" REBUILD 恢复");
+        }
+        return new IndexDiff(DiffType.INDEX_UNUSABLE_IN_SOURCE, name, si.definition(), ti.definition(),
+            "源库索引已失效（不可用），请先在源库执行 ALTER INDEX \"" + name + "\" REBUILD");
     }
 
     private List<PartitionDiff> comparePartitions(TableMeta s, TableMeta t) {

@@ -70,7 +70,7 @@ public class MetadataStoreService {
             .collect(Collectors.toList());
         List<IndexMeta> indexes = indexRepo.findByTableId(mt.getId()).stream()
             .map(i -> new IndexMeta(i.getIndexName(), mt.getTableName(), parseList(i.getColumns()),
-                i.isUnique(), i.isPartial(), i.getWhereClause(), i.getDefinition()))
+                i.isUnique(), i.isPartial(), i.getWhereClause(), i.getDefinition(), i.isUsable()))
             .collect(Collectors.toList());
         List<PartitionMeta> partitions = partitionRepo.findByTableIdOrderByOrdinalAsc(mt.getId()).stream()
             .map(p -> new PartitionMeta(p.getPartitionName(), p.getParentName(), p.getOrdinal(),

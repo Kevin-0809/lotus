@@ -36,7 +36,11 @@ public final class DdlScriptGenerator {
                 generateColumnDdl(sb, diff.tableName(), cd, sourceTables.get(diff.tableName()));
             }
             for (ConstraintDiff cd : diff.constraintDiffs()) generateConstraintDdl(sb, diff.tableName(), cd);
-            for (IndexDiff id : diff.indexDiffs()) generateIndexDdl(sb, diff.tableName(), id);
+            Set<String> recreatedIndexes = diff.indexDiffs().stream()
+                .filter(id -> id.type() == DiffType.INDEX_MISSING_IN_TARGET || id.type() == DiffType.INDEX_MISMATCH)
+                .map(IndexDiff::indexName)
+                .collect(java.util.stream.Collectors.toSet());
+            for (IndexDiff id : diff.indexDiffs()) generateIndexDdl(sb, diff.tableName(), id, recreatedIndexes);
             for (PartitionDiff pd : diff.partitionDiffs()) generatePartitionDdl(sb, diff.tableName(), pd);
             generateCommentDdl(sb, diff);
         }
@@ -183,7 +187,7 @@ public final class DdlScriptGenerator {
         }
     }
 
-    private void generateIndexDdl(StringBuilder sb, String table, IndexDiff id) {
+    private void generateIndexDdl(StringBuilder sb, String table, IndexDiff id, Set<String> recreatedIndexes) {
         switch (id.type()) {
             case INDEX_MISSING_IN_TARGET -> sb.append("-- INDEX_MISSING_IN_TARGET: ").append(id.indexName()).append("\n")
                 .append("CREATE INDEX \"").append(id.indexName()).append("\" ON \"").append(schema).append("\".\"").append(table).append("\" ")
@@ -194,6 +198,13 @@ public final class DdlScriptGenerator {
                 .append("DROP INDEX \"").append(id.indexName()).append("\";\n")
                 .append("CREATE INDEX \"").append(id.indexName()).append("\" ON \"").append(schema).append("\".\"").append(table).append("\" ")
                 .append(extractIndexSpec(id.sourceDef())).append(";\n\n");
+            case INDEX_UNUSABLE_IN_TARGET -> {
+                if (recreatedIndexes.contains(id.indexName())) break;
+                sb.append("-- INDEX_UNUSABLE_IN_TARGET: ").append(id.indexName()).append("\n")
+                  .append("ALTER INDEX \"").append(schema).append("\".\"").append(id.indexName()).append("\" REBUILD;\n\n");
+            }
+            case INDEX_UNUSABLE_IN_SOURCE -> sb.append("-- INDEX_UNUSABLE_IN_SOURCE: ").append(id.indexName())
+                .append("（源库索引失效，目标库无需变更，请先在源库执行 REBUILD）\n\n");
             default -> {}
         }
     }

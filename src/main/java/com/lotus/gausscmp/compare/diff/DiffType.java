@@ -12,6 +12,8 @@ public enum DiffType {
     INDEX_MISSING_IN_TARGET("目标库缺失索引"),
     INDEX_EXTRA_IN_TARGET("目标库多余索引"),
     INDEX_MISMATCH("索引不一致"),
+    INDEX_UNUSABLE_IN_TARGET("目标库索引失效"),
+    INDEX_UNUSABLE_IN_SOURCE("源库索引失效"),
     TABLE_COMMENT_MISMATCH("表注释不一致"),
     SEQUENCE_MISSING_IN_TARGET("目标库缺失序列"),
     SEQUENCE_EXTRA_IN_TARGET("目标库多余序列"),
