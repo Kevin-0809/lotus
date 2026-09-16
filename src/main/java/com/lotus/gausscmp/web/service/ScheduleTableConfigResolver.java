@@ -25,8 +25,7 @@ final class ScheduleTableConfigResolver {
             .map(CompareTableConfig::getTableName)
             .map(Pattern::quote)
             .toList());
-        List<String> include = parameters.isEmpty()
-            ? (scheduleInclude == null ? List.of() : scheduleInclude) : parameters;
+        List<String> include = scheduleInclude == null ? List.of() : scheduleInclude;
         return new Resolved(include, List.copyOf(exclude), parameters);
     }
 }

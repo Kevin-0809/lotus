@@ -16,7 +16,7 @@ class ScheduleTableConfigResolverTest {
 
         var resolved = ScheduleTableConfigResolver.resolve(rows, List.of("legacy_include"), List.of("legacy_exclude"));
 
-        assertThat(resolved.include()).containsExactly("\\Qa\\E", "\\Qb\\E");
+        assertThat(resolved.include()).containsExactly("legacy_include");
         assertThat(resolved.exclude()).containsExactly("legacy_exclude", "\\Qb\\E");
         assertThat(resolved.dataTables()).containsExactly("\\Qa\\E", "\\Qb\\E");
     }

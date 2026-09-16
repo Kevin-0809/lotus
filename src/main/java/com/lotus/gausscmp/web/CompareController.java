@@ -60,7 +60,7 @@ public class CompareController {
         SchemaSnapshot tgtSnap = storeService.loadSnapshot(tgt.getId());
 
         boolean ddl = Boolean.TRUE.equals(req.generateDdl());
-        List<String> include = effectiveInclude(req);
+        List<String> include = requestInclude(req);
         List<String> exclude = effectiveExclude(req);
         CompareConfig config = buildConfig(src, tgt, req);
         String progressId = beginProgress(req);
@@ -155,11 +155,10 @@ public class CompareController {
         SourceConfig source = new SourceConfig(src.getUrl(), src.getUsername(), src.getPassword(), src.getSchema(), true);
         SourceConfig target = new SourceConfig(tgt.getUrl(), tgt.getUsername(), tgt.getPassword(), tgt.getSchema(), true);
 
-        List<String> include = effectiveInclude(req);
+        List<String> include = requestInclude(req);
         List<String> exclude = effectiveExclude(req);
         List<String> configuredParameters = exactConfiguredNames(CompareTableConfig.TableType.PARAMETER);
-        List<String> dataTables = configuredParameters.isEmpty()
-            ? (req.dataCompareTables() != null ? req.dataCompareTables() : List.of()) : configuredParameters;
+        List<String> dataTables = configuredParameters;
 
         String checksumFunction = req.checksumFunction() != null ? req.checksumFunction() : "md5";
         if (!ChecksumCalculator.ALLOWED_HASH_FUNCTIONS.contains(
@@ -182,9 +181,7 @@ public class CompareController {
         return new CompareConfig(source, target, opts);
     }
 
-    private List<String> effectiveInclude(CompareRequest req) {
-        List<String> configured = exactConfiguredNames(CompareTableConfig.TableType.PARAMETER);
-        if (!configured.isEmpty()) return configured;
+    private List<String> requestInclude(CompareRequest req) {
         return req.includeTables() != null ? req.includeTables() : List.of();
     }
 
